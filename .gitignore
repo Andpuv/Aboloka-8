@@ -1,1 +1,13 @@
-.DS_Store
+c/**
+bin/**
+.vscode/**
+.*
+.github
+.gitignore
+*.x
+*.exe
+*.o
+*.obj
+*.so
+*.dll
+*.lib
