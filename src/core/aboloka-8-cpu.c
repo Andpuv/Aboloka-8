@@ -132,7 +132,7 @@ bool aboloka_8_cpu_intr (
 {
   assert(self && int_id < ABOLOKA_8_CPU_N_IRQS);
 
-  int_id = UINT8_C(1) << int_id;
+  int_id = UINT8_C(0x1) << int_id;
 
   if ( self->irr & int_id )
     /* The IRQ line is already used. */
@@ -150,7 +150,7 @@ bool aboloka_8_cpu_inta (
 {
   assert(self && int_id < ABOLOKA_8_CPU_N_IRQS);
 
-  int_id = UINT8_C(1) << int_id;
+  int_id = UINT8_C(0x1) << int_id;
   return !( self->irr & int_id );
 }
 
@@ -195,7 +195,13 @@ bool aboloka_8_cpu_cycle (
     return false;
 
   if ( self->stage < 0x0 ) {
-    return true;
+    int int_id = UINT8_C(0x1) << ABOLOKA_8_CPU_WAKE_UP;
+
+    if ( !( self->irr & int_id ) )
+      return true;
+
+    self->irr  &= ~int_id;
+    self->stage = self->target_stage;
   }
 
   switch ( self->stage ) {

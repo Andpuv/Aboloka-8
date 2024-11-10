@@ -15,9 +15,49 @@ struct aboloka_8_ram_t;
     (size_t)1 << ABOLOKA_8_CPU_SEG_SIZE_LOG2                                   \
   )
 
+#   define ABOLOKA_8_CPU_IRQ_0  0x0
+#   define ABOLOKA_8_CPU_IRQ_1  0x1
+#   define ABOLOKA_8_CPU_IRQ_2  0x2
+#   define ABOLOKA_8_CPU_IRQ_3  0x3
+#   define ABOLOKA_8_CPU_IRQ_4  0x4
+#   define ABOLOKA_8_CPU_IRQ_5  0x5
+#   define ABOLOKA_8_CPU_IRQ_6  0x6
+#   define ABOLOKA_8_CPU_IRQ_7  0x7
 #   define ABOLOKA_8_CPU_N_IRQS 0x8
+
+/* This interrupt is used to wake up the CPU. */
+#   define ABOLOKA_8_CPU_WAKE_UP ABOLOKA_8_CPU_IRQ_0
+
+#   define ABOLOKA_8_CPU_REG_0  0x0
+#   define ABOLOKA_8_CPU_REG_1  0x1
+#   define ABOLOKA_8_CPU_REG_2  0x2
+#   define ABOLOKA_8_CPU_REG_3  0x3
+#   define ABOLOKA_8_CPU_REG_4  0x4
+#   define ABOLOKA_8_CPU_REG_5  0x5
+#   define ABOLOKA_8_CPU_REG_6  0x6
+#   define ABOLOKA_8_CPU_REG_7  0x7
 #   define ABOLOKA_8_CPU_N_REGS 0x8
+
+#   define ABOLOKA_8_CPU_A      0x0
+#   define ABOLOKA_8_CPU_X      0x1
+#   define ABOLOKA_8_CPU_Y      0x2
+#   define ABOLOKA_8_CPU_Z      0x3
+
+#   define ABOLOKA_8_CPU_SEG_0  0x0
+#   define ABOLOKA_8_CPU_SEG_1  0x1
+#   define ABOLOKA_8_CPU_SEG_2  0x2
+#   define ABOLOKA_8_CPU_SEG_3  0x3
+#   define ABOLOKA_8_CPU_SEG_4  0x4
+#   define ABOLOKA_8_CPU_SEG_5  0x5
+#   define ABOLOKA_8_CPU_SEG_6  0x6
+#   define ABOLOKA_8_CPU_SEG_7  0x7
 #   define ABOLOKA_8_CPU_N_SEGS 0x8
+
+#   define ABOLOKA_8_CPU_CS     0x0 /* Code Segment            */
+#   define ABOLOKA_8_CPU_DS     0x1 /* Data Segment            */
+#   define ABOLOKA_8_CPU_SS     0x2 /* Stack Segment           */
+#   define ABOLOKA_8_CPU_ES     0x3 /* Extra data/code Segment */
+
 #   define ABOLOKA_8_CPU_N_INTS 0x80
 #   define ABOLOKA_8_CPU_N_MAPS 0x80
 

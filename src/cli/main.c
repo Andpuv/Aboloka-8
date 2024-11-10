@@ -51,7 +51,28 @@ int main ( int argc, char ** argv )
     ++cycles;
     ++elapsed_cycles;
 
-    getchar();
+    int ch = getchar();
+
+    if ( ch == 'q' || ch == 'Q' ) {
+      fprintf(stderr, "... Quitted.\n");
+
+      cpu->quit = true;
+    } else if ( ch == 'w' || ch == 'W' ) {
+      if ( is_halted ) {
+        elapsed_cycles = 0;
+        is_halted      = false;
+
+        fprintf(stderr, "... Trying to WAKE UP the CPU...");
+
+        is_done = aboloka_8_cpu_intr(cpu, ABOLOKA_8_CPU_WAKE_UP);
+
+        fprintf(stderr, "\r... Trying to WAKE UP the CPU... %s\n",
+          is_done ? "Waking up" : "Sleeping"
+        );
+      } else {
+        fprintf(stderr, "... CPU is already running.\n");
+      }
+    }
   }
 
   aboloka_8_cpu_deconstruct(cpu);
