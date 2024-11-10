@@ -73,6 +73,8 @@ bool aboloka_8_cpu_initialize (
   self->stage        = 0x0;
   self->target_stage = 0x0;
   self->quit         = false;
+  self->mcr          = UINT8_C(0x00);
+  self->mrr          = UINT8_C(0x00);
 
   /* TODO(Andpuv) [1]: Other initialization. */
 
@@ -194,6 +196,13 @@ bool aboloka_8_cpu_cycle (
   if ( self->quit )
     return false;
 
+  if ( self->mrr <= self->mcr ) {
+    self->target_stage = self->stage;
+    self->stage        = 0x5; /* Go to refresh stage. */
+  } else if ( UINT8_C(0x00) != self->mrr ) {
+    ++self->mcr;
+  }
+
   if ( self->stage < 0x0 ) {
     int int_id = UINT8_C(0x1) << ABOLOKA_8_CPU_WAKE_UP;
 
@@ -208,18 +217,26 @@ bool aboloka_8_cpu_cycle (
   case 0x0: {
     if ( !cpu_fetch(self) )
       break;
+
+    self->stage = 0x1;
   } /* /fall-through/ */
   case 0x1: {
     if ( !cpu_decode(self) )
       break;
+
+    self->stage = 0x2;
   } /* /fall-through/ */
   case 0x2: {
     if ( !cpu_execute(self) )
       break;
+
+    self->stage = 0x3;
   } /* /fall-through/ */
   case 0x3: {
     if ( !cpu_access(self) )
       break;
+
+    self->stage = 0x4;
   } /* /fall-through/ */
   case 0x4: {
     if ( self->ins.stage < self->ins.stages ) {
@@ -229,8 +246,17 @@ bool aboloka_8_cpu_cycle (
       self->stage = 0x0; /* Go back to fetch stage. */
     }
   } break;
+
+  case 0x5: {
+    if ( !aboloka_8_ram_refresh(self->ram) )
+      break;
+
+    self->mcr   = UINT8_C(0x00);
+    self->stage = self->target_stage;
+  } break;
   }
 
   ++self->cycles;
+
   return true;
 }

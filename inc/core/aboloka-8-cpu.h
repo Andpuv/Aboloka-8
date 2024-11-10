@@ -102,6 +102,7 @@ struct aboloka_8_cpu_t {
   uint8_t                  pc;  /* Program Counter              */
   uint8_t                  csr; /* Control and Status Register  */
   uint8_t                  mrr; /* Memory Refresh Register      */
+  uint8_t                  mcr; /* Memory Counter Register      */
   uint8_t                  imr; /* Interrupt Masks Register     */
   uint8_t                  irr; /* Interrupt Requestes Register */
   uint16_t                 idt; /* Interrupt Descriptors Table  */

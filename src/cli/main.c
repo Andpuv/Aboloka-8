@@ -16,6 +16,8 @@ int main ( int argc, char ** argv )
   bool is_halted = false;
   bool is_done;
 
+  cpu->mrr = 22;
+
   while ( !cpu->quit ) {
     fprintf(stderr, "Cycle %u/%u:\n", (unsigned int)cpu->cycles, cycles);
 
