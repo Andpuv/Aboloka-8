@@ -25,9 +25,6 @@ struct aboloka_8_ram_t;
 #   define ABOLOKA_8_CPU_IRQ_7  0x7
 #   define ABOLOKA_8_CPU_N_IRQS 0x8
 
-/* This interrupt is used to wake up the CPU. */
-#   define ABOLOKA_8_CPU_WAKE_UP ABOLOKA_8_CPU_IRQ_0
-
 #   define ABOLOKA_8_CPU_REG_0  0x0
 #   define ABOLOKA_8_CPU_REG_1  0x1
 #   define ABOLOKA_8_CPU_REG_2  0x2
@@ -68,7 +65,7 @@ struct aboloka_8_ram_t;
 #   define ABOLOKA_8_CPU_OF UINT8_C(0x10)
 #   define ABOLOKA_8_CPU_IF UINT8_C(0x20)
 #   define ABOLOKA_8_CPU_UF UINT8_C(0x40)
-#   define ABOLOKA_8_CPU_7F UINT8_C(0x80)
+#   define ABOLOKA_8_CPU_TF UINT8_C(0x80)
 
 struct aboloka_8_ir_t {
   uint8_t queue [ 0x4 ];
@@ -80,14 +77,16 @@ struct aboloka_8_ins_t {
   uint16_t pc;
   int      ip;
   int      opcode;
+  int      stage;
+  int      stages;
+  int      access;
+  int      index;
   int      dst_id;
   int      src_id;
   uint8_t  dst;
   uint8_t  src;
   uint8_t  seg;
   uint8_t  ofs;
-  int      stage;
-  int      stages;
 };
 
 struct aboloka_8_cpu_t {
@@ -98,16 +97,16 @@ struct aboloka_8_cpu_t {
   int                      target_stage;
   uint16_t                 cycles;
   struct aboloka_8_ins_t   ins;
-  struct aboloka_8_ir_t    ir;  /* Intruction Register          */
-  uint8_t                  pc;  /* Program Counter              */
-  uint8_t                  csr; /* Control and Status Register  */
-  uint8_t                  mrr; /* Memory Refresh Register      */
-  uint8_t                  mcr; /* Memory Counter Register      */
-  uint8_t                  imr; /* Interrupt Masks Register     */
-  uint8_t                  irr; /* Interrupt Requestes Register */
-  uint16_t                 idt; /* Interrupt Descriptors Table  */
-  uint16_t                 mdt; /* Memory Descriptors Table     */
-  uint8_t                  sp;  /* Stack top Pointer            */
+  struct aboloka_8_ir_t    ir;
+  uint8_t                  pc;
+  uint8_t                  csr;
+  uint8_t                  mrr;
+  uint8_t                  mcr;
+  uint8_t                  imr [ ABOLOKA_8_CPU_N_IRQS ];
+  uint8_t                  irr [ ABOLOKA_8_CPU_N_IRQS ];
+  uint16_t                 idt;
+  uint16_t                 mdt;
+  uint8_t                  sp;
   uint8_t                  regs [ ABOLOKA_8_CPU_N_REGS ];
   uint8_t                  segs [ ABOLOKA_8_CPU_N_SEGS ];
   uint16_t                 __idt__ [ ABOLOKA_8_CPU_N_INTS ];
@@ -163,6 +162,11 @@ __ABOLOKA_8_CORE_API__
 bool aboloka_8_cpu_halt (
   struct aboloka_8_cpu_t * self,
   bool                     is_halt
+);
+
+__ABOLOKA_8_CORE_API__
+bool aboloka_8_cpu_reset (
+  struct aboloka_8_cpu_t * self
 );
 
 __ABOLOKA_8_CORE_API__

@@ -66,7 +66,7 @@ int main ( int argc, char ** argv )
 
         fprintf(stderr, "... Trying to WAKE UP the CPU...");
 
-        is_done = aboloka_8_cpu_intr(cpu, ABOLOKA_8_CPU_WAKE_UP);
+        is_done = aboloka_8_cpu_intr(cpu, ABOLOKA_8_CPU_IRQ_0);
 
         fprintf(stderr, "\r... Trying to WAKE UP the CPU... %s\n",
           is_done ? "Waking up" : "Sleeping"

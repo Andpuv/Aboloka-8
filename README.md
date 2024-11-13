@@ -286,8 +286,8 @@ pop ss             0    B6    Pop SS from the stack                        1
 pop es             0    B7    Pop ES from the stack                        1
 psh sp             0    B8    Push SP onto the stack                       1
 psh sr             0    B9    Push SR onto the stack                       1
-stu                0    BA    Set UF to 1                                  1
-clu                0    BB    Set UF to 0                                  1
+int #ud            0    BA    Interrupt #UD                                1
+int #ud            0    BB    Interrupt #UD                                1
 pop sp             0    BC    Pop SP from the stack                        1
 pop sr             0    BD    Pop SR from the stack                        1
 mks a, x, y        0    BE    Map segment X to A using Y as attributes     1
