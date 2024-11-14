@@ -5,6 +5,7 @@
 # include <stdio.h>
 # include <string.h>
 # include <errno.h>
+# include "aboloka-8-cpu-legacy.h"
 # include "aboloka-8-cpu-impl.h"
 
 __ABOLOKA_8_CORE_API__
@@ -180,13 +181,12 @@ bool aboloka_8_cpu_reset (
   self->stage        = CPU_STAGE_IDLE;
   self->target_stage = CPU_STAGE_IDLE;
   self->cycles       = UINT16_C(0);
-  self->pc           = UINT8_C(0x00);
-  self->csr          = CPU_1F;
+  self->ip           = UINT8_C(0x00);
+  self->csr          = CPU_LF;
   self->mcr          = UINT8_C(0x00);
   self->mrr          = UINT8_C(0x00);
   self->idt          = UINT16_C(0x0000);
   self->mdt          = UINT16_C(0x0000);
-  self->sp           = UINT8_C(0x00);
 
   for ( int index = 0; index < CPU_N_IRQS; ++index ) {
     self->imr[ index ] = UINT8_C(0x00);
@@ -204,30 +204,21 @@ bool aboloka_8_cpu_reset (
     self->segs[ index ] = UINT8_C(0x00);
   }
 
-  for ( int index = 0; index < CPU_N_INTS; ++index ) {
-    self->__idt__[ index ] = UINT16_C(0x0000);
-  }
-
-  for ( int index = 0; index < CPU_N_MAPS; ++index ) {
-    self->__mdt__[ index ] = UINT16_C(0x0000);
-  }
-
-  self->ins.pc     = UINT16_C(0x00);
-  self->ins.ip     = 0;
-  self->ins.opcode = 0;
-  self->ins.stages = 0;
-  self->ins.stage  = 0;
-  self->ins.access = CPU_NO_ACCESS;
-  self->ins.index  = 0;
-  self->ins.dst_id = 0;
-  self->ins.src_id = 0;
-  self->ins.dst    = UINT8_C(0x00);
-  self->ins.src    = UINT8_C(0x00);
-  self->ins.seg    = UINT8_C(0x00);
-  self->ins.ofs    = UINT8_C(0x00);
-
-  self->ir.front = -1;
-  self->ir.rear  = -1;
+  self->ins.ip       = UINT16_C(0x00);
+  self->ins.ip_queue = 0;
+  self->ins.opcode   = 0;
+  self->ins.stages   = 0;
+  self->ins.stage    = 0;
+  self->ins.access   = CPU_NO_ACCESS;
+  self->ins.index    = 0;
+  self->ins.dst_id   = 0;
+  self->ins.src_id   = 0;
+  self->ins.dst      = UINT8_C(0x00);
+  self->ins.src      = UINT8_C(0x00);
+  self->ins.seg      = UINT8_C(0x00);
+  self->ins.ofs      = UINT8_C(0x00);
+  self->ir.front     = -1;
+  self->ir.rear      = -1;
 
   for ( int index = 0; index < (int)sizeof(self->ir.queue); ++index ) {
     self->ir.queue[ index ] = UINT8_C(0x00);
@@ -235,6 +226,8 @@ bool aboloka_8_cpu_reset (
 
   return true;
 }
+
+/* TODO(Andpuv) [2]: Implement legacy mode. */
 
 __ABOLOKA_8_CORE_API__
 bool aboloka_8_cpu_cycle (

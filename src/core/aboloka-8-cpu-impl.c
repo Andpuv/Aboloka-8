@@ -1,4 +1,5 @@
 # include "aboloka-8-cpu-impl.h"
+#include <stdint.h>
 
 void cpu_update_flags (
   struct aboloka_8_cpu_t * self,
@@ -24,13 +25,90 @@ uint8_t cpu_add_and_update_flags (
 {
   uint16_t res = (uint16_t)src_0 + (uint16_t)src_1;
 
-  bool dst_sf = UINT8_C(0x00) != ( self->ins.dst & UINT8_C(0x80) );
-  bool src_sf = UINT8_C(0x00) != ( self->ins.src & UINT8_C(0x80) );
+  bool src_0_sf = UINT8_C(0x00) != ( src_0 & UINT8_C(0x80) );
+  bool src_1_sf = UINT8_C(0x00) != ( src_1 & UINT8_C(0x80) );
+  bool cf       = UINT16_C(0x00) != ( res >> 8 );
+  bool zf       = UINT16_C(0x00) == ( res & UINT16_C(0xFF) );
+  bool sf       = UINT16_C(0x00) != ( res & UINT16_C(0x80) );
+  bool of       = src_0_sf == src_1_sf && src_0_sf != sf;
+
+  cpu_update_flags(self, cf, zf, sf, of);
+
+  return (uint8_t)res;
+}
+
+uint8_t cpu_sub_and_update_flags (
+  struct aboloka_8_cpu_t * self,
+  uint8_t                  src_0,
+  uint8_t                  src_1
+)
+{
+  return cpu_add_and_update_flags(self, src_0, ~src_1 + UINT8_C(1));
+}
+
+void cpu_update_flags_after_and_or_xor (
+  struct aboloka_8_cpu_t * self,
+  uint8_t                  res
+)
+{
+  bool cf = false;
+  bool zf = UINT8_C(0x00) == res;
+  bool sf = UINT8_C(0x00) != ( res & UINT8_C(0x80) );
+  bool of = false;
+
+  cpu_update_flags(self, cf, zf, sf, of);
+}
+
+uint8_t cpu_sll_and_update_flags (
+  struct aboloka_8_cpu_t * self,
+  uint8_t                  src_0,
+  uint8_t                  src_1
+)
+{
+  uint16_t res = (uint16_t)src_0 << (int)( (unsigned int)src_1 );
 
   bool cf = UINT16_C(0x00) != ( res >> 8 );
   bool zf = UINT16_C(0x00) == ( res & UINT16_C(0xFF) );
   bool sf = UINT16_C(0x00) != ( res & UINT16_C(0x80) );
-  bool of = dst_sf == src_sf && dst_sf != sf;
+  bool of = false;
+
+  cpu_update_flags(self, cf, zf, sf, of);
+
+  return (uint8_t)res;
+}
+
+uint8_t cpu_srl_and_update_flags (
+  struct aboloka_8_cpu_t * self,
+  uint8_t                  src_0,
+  uint8_t                  src_1
+)
+{
+  uint16_t res = (uint16_t)src_0 >> (int)( (unsigned int)src_1 );
+
+  bool cf = UINT16_C(0x00) != ( res >> 8 );
+  bool zf = UINT16_C(0x00) == ( res & UINT16_C(0xFF) );
+  bool sf = UINT16_C(0x00) != ( res & UINT16_C(0x80) );
+  bool of = false;
+
+  cpu_update_flags(self, cf, zf, sf, of);
+
+  return (uint8_t)res;
+}
+
+uint8_t cpu_sra_and_update_flags (
+  struct aboloka_8_cpu_t * self,
+  uint8_t                  src_0,
+  uint8_t                  src_1
+)
+{
+  uint16_t res = (uint16_t)(
+    (int16_t)( (int8_t)src_0 ) >> (int)( (unsigned int)src_1 )
+  );
+
+  bool cf = UINT16_C(0x00) != ( res >> 8 );
+  bool zf = UINT16_C(0x00) == ( res & UINT16_C(0xFF) );
+  bool sf = UINT16_C(0x00) != ( res & UINT16_C(0x80) );
+  bool of = false;
 
   cpu_update_flags(self, cf, zf, sf, of);
 
@@ -54,24 +132,26 @@ void cpu_exception (
   self->irr[ CPU_IRQ_0 ] |= UINT8_C(1) << cause;
 }
 
-bool cpu_read (
+bool cpu_read_mem (
   struct aboloka_8_cpu_t * self,
   uint8_t                  seg,
   uint8_t                  ofs,
-  uint8_t *                val
+  uint8_t *                data
 )
 {
-  return true;
+  uint16_t addr = ( (uint16_t)seg << 8 ) | (uint16_t)ofs;
+  return aboloka_8_ram_read(self->ram, addr, data);
 }
 
-bool cpu_write (
+bool cpu_write_mem (
   struct aboloka_8_cpu_t * self,
   uint8_t                  seg,
   uint8_t                  ofs,
-  uint8_t                  val
+  uint8_t                  data
 )
 {
-  return true;
+  uint16_t addr = ( (uint16_t)seg << 8 ) | (uint16_t)ofs;
+  return aboloka_8_ram_write(self->ram, addr, data);
 }
 
 bool cpu_fetch ( struct aboloka_8_cpu_t * self )
@@ -94,7 +174,6 @@ bool cpu_execute ( struct aboloka_8_cpu_t * self )
   case 0x01: {
     self->quit  = true;
     self->stage = CPU_STAGE_IDLE;
-    self->csr  &= ~CPU_1F;
   } break;
 
   case 0x02:
@@ -103,7 +182,7 @@ bool cpu_execute ( struct aboloka_8_cpu_t * self )
     case 0: {
       self->ins.stages = 2;
       self->ins.stage  = 0;
-      self->pc         = self->ins.dst;
+      self->ip         = self->ins.dst;
       self->ins.access = CPU_ACCESS_SEG_READ;
       self->ins.src_id = CPU_ES;
     } break;
@@ -122,21 +201,21 @@ bool cpu_execute ( struct aboloka_8_cpu_t * self )
   case 0x08: case 0x09: case 0x0A: case 0x0B: {
     switch ( self->ins.stage ) {
     case 0: {
-      int16_t pc =
-        (int16_t)self->pc +
+      int16_t ip =
+        (int16_t)self->ip +
         (int16_t)( (int8_t)self->ins.dst );
 
-      if ( pc < INT16_C(0) || CPU_SEG_SIZE <= pc ) {
+      if ( ip < INT16_C(0) || CPU_SEG_SIZE <= ip ) {
         self->ins.stages = 2;
         self->ins.stage  = 0;
-        self->ins.pc     = pc % CPU_SEG_SIZE;
-        self->ins.dst    = pc / CPU_SEG_SIZE;
+        self->ins.ip     = ip % CPU_SEG_SIZE;
+        self->ins.dst    = ip / CPU_SEG_SIZE;
         self->ins.access = CPU_ACCESS_SEG_READ;
         self->ins.src_id = CPU_ES;
       } else {
         self->ins.stages = 1;
         self->ins.stage  = 0;
-        self->ins.pc     = pc % CPU_SEG_SIZE;
+        self->ins.ip     = ip % CPU_SEG_SIZE;
       }
     } break;
 
@@ -185,7 +264,7 @@ bool cpu_execute ( struct aboloka_8_cpu_t * self )
       self->ins.stages = 1;
       self->ins.stage  = 0;
       self->ins.access = CPU_ACCESS_REG_WRITE;
-      self->ins.dst_id = CPU_A;
+      self->ins.dst_id = CPU_AX;
       self->ins.dst    = self->ins.src;
     } break;
     }
@@ -236,7 +315,7 @@ bool cpu_execute ( struct aboloka_8_cpu_t * self )
     self->ins.stage  = 0;
 
     if ( self->csr & CPU_UF ) {
-      cpu_exception(self, CPU_EXCEPTION_CAUSE_KP);
+      cpu_exception(self, CPU_EXCEPTION_CAUSE_CP);
     } else {
       self->csr |= CPU_IF;
     }
@@ -247,7 +326,7 @@ bool cpu_execute ( struct aboloka_8_cpu_t * self )
     self->ins.stage  = 0;
 
     if ( self->csr & CPU_UF ) {
-      cpu_exception(self, CPU_EXCEPTION_CAUSE_KP);
+      cpu_exception(self, CPU_EXCEPTION_CAUSE_CP);
     } else {
       self->csr &= ~CPU_IF;
     }
@@ -288,12 +367,12 @@ bool cpu_execute ( struct aboloka_8_cpu_t * self )
       self->ins.stages = 2;
       self->ins.stage  = 0;
       self->ins.access = CPU_ACCESS_REG_READ;
-      self->ins.src_id = CPU_A;
+      self->ins.src_id = CPU_AX;
     } break;
 
     case 1: {
       self->ins.access = CPU_ACCESS_REG_WRITE;
-      self->ins.dst_id = CPU_A;
+      self->ins.dst_id = CPU_AX;
 
       if ( self->ins.opcode ) {
         self->ins.src ^= self->ins.dst;
@@ -358,50 +437,6 @@ bool cpu_access ( struct aboloka_8_cpu_t * self )
       self->ins.ofs,
       &self->ins.src
     );
-
-  case CPU_ACCESS_INT_TABLE: {
-    if ( (int)sizeof(self->__idt__) <= self->ins.index )
-      break;
-
-    bool is_done = cpu_read(self,
-      self->ins.seg,
-      self->ins.ofs,
-      &self->ins.src
-    );
-
-    if ( /* /unlikely/ */ !is_done )
-      return is_done;
-
-    self->__idt__[ self->ins.index++ ] = self->ins.src;
-
-    if ( UINT8_C(0xFF) == self->ins.ofs ) {
-      ++self->ins.seg;
-    } else {
-      ++self->ins.ofs;
-    }
-  } return false; /* Continue. */
-
-  case CPU_ACCESS_MAP_TABLE: {
-    if ( (int)sizeof(self->__mdt__) <= self->ins.index )
-      break;
-
-    bool is_done = cpu_read(self,
-      self->ins.seg,
-      self->ins.ofs,
-      &self->ins.src
-    );
-
-    if ( /* /unlikely/ */ !is_done )
-      return is_done;
-
-    self->__mdt__[ self->ins.index++ ] = self->ins.src;
-
-    if ( UINT8_C(0xFF) == self->ins.ofs ) {
-      ++self->ins.seg;
-    } else {
-      ++self->ins.ofs;
-    }
-  } return false; /* Continue. */
   }
 
   self->ins.access = CPU_NO_ACCESS;

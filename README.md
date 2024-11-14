@@ -1,295 +1,447 @@
+# Aboloka-8 Specifications
+
 ```
-| <opcode> 00rr--00 iiiiiiii -------- | dst = reg[r]
-|                                     | src = imm
-| <opcode> 00rrmm01 iiiiiiii -------- | dst = reg[r]
-|                                     | src = reg[m] + imm
-| <opcode> 00rr--10 iiiiiiii -------- | Exception
-|                                     | Exception
-| <opcode> 00rrmm11 iiiiiiii -------- | Exception
-|                                     | Exception
-|-------------------------------------|----------------------------------------
-| <opcode> 01rr--00 oooooooo -------- | dst = reg[r]
-|                                     | src = mem[seg[ds]][o]
-| <opcode> 01rrmm01 oooooooo -------- | dst = reg[r]
-|                                     | src = mem[seg[ds]][reg[m] + o]
-| <opcode> 01rr--10 oooooooo -------- | dst = mem[seg[ds]][o]
-|                                     | src = reg[r]
-| <opcode> 01rrmm11 oooooooo -------- | dst = mem[seg[ds]][reg[m] + o]
-|                                     | src = reg[r]
-|-------------------------------------|----------------------------------------
-| <opcode> 10rr--00 oooooooo -------- | dst = reg[r]
-|                                     | src = mem[seg[ss]][o]
-| <opcode> 10rrmm01 oooooooo -------- | dst = reg[r]
-|                                     | src = mem[seg[ss]][reg[m] + o]
-| <opcode> 10rr--10 oooooooo -------- | dst = mem[seg[ss]][o]
-|                                     | src = reg[r]
-| <opcode> 10rrmm11 oooooooo -------- | dst = mem[seg[ss]][reg[m] + o]
-|                                     | src = reg[r]
-|-------------------------------------|----------------------------------------
-| <opcode> 11rrmm00 oooooooo -------- | dst = reg[r]
-|                                     | src = mem[seg[es]][o]
-| <opcode> 11rrmm01 oooooooo -------- | dst = reg[r]
-|                                     | src = mem[seg[es]][reg[m] + o]
-| <opcode> 11rrmm10 oooooooo -------- | dst = mem[seg[es]][o]
-|                                     | src = reg[r]
-| <opcode> 11rrmm11 oooooooo -------- | dst = mem[seg[es]][reg[m] + o]
-|                                     | src = reg[r]
+.==============================================================================.
+| Encoding | Description                                                       |
+|==========|===================================================================|
+| 00rrrmmm | dst = reg[R]                                                      |
+| iiiiiiii | src = reg[M] + I or I depending on the operation.                 |
+|----------|-------------------------------------------------------------------|
+| 01rrrmmm | dst = reg[R]                                                      |
+| iiiiiiii | src = mem[S:(reg[M] + I)]                                         |
+|----------|-------------------------------------------------------------------|
+| 10rrrmmm | dst = mem[S:(reg[M] + I)]                                         |
+| iiiiiiii | src = reg[R]                                                      |
+|----------|-------------------------------------------------------------------|
+| 11rrrmmm | dst = reg[R]                                                      |
+|          | src = reg[M]                                                      |
+'=============================================================================='
 
-https://www.cs.princeton.edu/courses/archive/fall12/cos375/IA32Jcc.pdf
+.==============================================================================.
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 0 000    | AX or AX'            | Accumulator register.                      |
+| 0 001    | BX or BX'            | Data register 0.                           |
+| 0 010    | CX or CX'            | Data register 1.                           |
+| 0 011    | DX or DX'            | Data register 2.                           |
+| 0 100    | SP or SP'            | Stack pointer.                             |
+| 0 101    | BP or BP'            | Base pointer.                              |
+| 0 110    | DI or DI'            | Destination pointer/index.                 |
+| 0 111    | SI or SI'            | Source pointer/index.                      |
+|----------|----------------------|--------------------------------------------|
+| 1 000    | CS or CS'            | Code segment.                              |
+| 1 001    | DS or DS'            | Data segment.                              |
+| 1 010    | SS or SS'            | Stack segment.                             |
+| 1 011    | ES or ES'            | Extra (data/code) segment.                 |
+|----------|----------------------|--------------------------------------------|
+| 1 100    | IDT                  | Interrupt descriptors table register.      |
+| 1 101    | MDT                  | Memory map descriptors table register.     |
+| 1 110    | MRR                  | Memory refresh register.                   |
+| 1 111    | CSR                  | Control and status register.               |
+|----------|----------------------|--------------------------------------------|
+| - ---    | IP                   | Instruction pointer.                       |
+| - ---    | MCR                  | Memory refresh counter register.           |
+| - ---    | IRR0, ...IRR7        | Interrupt requests registers.              |
+| - ---    | IMR0, ...IMR7        | Interrupt masks registers.                 |
+| - ---    | CYR0, ...CYR3        | Cycles registers.                          |
+'=============================================================================='
 
-Memory has 256 segments, each one has 256 bytes.
-Memory is 64KiB in total.
+.==============================================================================.
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 00000001 | CF                   | Carry flag is set if an unsigned operation |
+|          |                      | generates a carry.                         |
+|----------|----------------------|--------------------------------------------|
+| 00000010 | ZF                   | Zero flag is set if an operation set the   |
+|          |                      | destination to zero.                       |
+|----------|----------------------|--------------------------------------------|
+| 00000100 | SF                   | Sign flag is set if an operation set the   |
+|          |                      | bit 7 of the destination to 1.             |
+|----------|----------------------|--------------------------------------------|
+| 00001000 | OF                   | Overflow flag is set if a signed operation |
+|          |                      | overflowed.                                |
+|----------|----------------------|--------------------------------------------|
+| 00010000 | IF                   | Interrupt enable flag is set to 1 if       |
+|          |                      | interrupts are enabled.                    |
+|----------|----------------------|--------------------------------------------|
+| 00100000 | TF                   | Trap flag is set to 1 if single-step mode  |
+|          |                      | is enabled.                                |
+|----------|----------------------|--------------------------------------------|
+| 01000000 | LF                   | Avuxo legacy mode.                         |
+|----------|----------------------|--------------------------------------------|
+| 10000000 | UF                   | User flag is set to 1 entering in the user |
+|          |                      | mode.                                      |
+'=============================================================================='
 
-Flags      Index  Description
-========== =====  ===========
-SF             0  Set as the bit 7 of the result
-ZF             1  Set if the result is 0
-CF             2  Set if the result has a carry
-OF             3  Set if the operation overflowed
-RF             4  Always set (CPU is running)
-IF             5  Set to 1 if interrupts are enabled
-6F             6  Reserved
-UF             7  Set to 1 if the CPU is in user mode
-
-Registers  Index  Description            UF
-=========  =====  =====================  ==
-A              0  Kernel accumulator      0
-X              1  Kernel register X       0
-Y              2  Kernel register Y       0
-Z              3  Kernel register Z       0
----------  -----  ---------------------  --
-A'             4  User accumulator        1
-X'             5  User register X         1
-Y'             6  User register Y         1
-Z'             7  User register Z         1
-
-Segments   Index  Description            UF
-=========  =====  =====================  ==
-CS             0  Kernel Code Ssegment    0
-DS             1  Kernel Data Ssegment    0
-SS             2  Kernel Stack Ssegment   0
-ES             3  Kernel Extra Ssegment   0
----------  -----  ---------------------  --
-CS'            4  User Code Ssegment      1
-DS'            5  User Data Ssegment      1
-SS'            6  User Stack Ssegment     1
-ES'            7  User Extra Ssegment     1
-
-Instruction    ModRM  Opcode  Description                               Size
-====================  ======  ========================================  ====
-hlt                0    00    Halt the execution until interrupt 0         1
-hcf                0    01    Halt and catch fire                          1
-jmp far imm        0    02    Set CS:PC to ES:IMM                          2
-jmp near imm       0    03    In/Decrement PC by IMM                       2
-jmp far a          0    04    Set CS:PC to ES:A                            1
-jmp far x          0    05    Set CS:PC to ES:X                            1
-jmp far y          0    06    Set CS:PC to ES:Y                            1
-jmp far z          0    07    Set CS:PC to ES:Z                            1
-jmp near a         0    08    In/Decrement PC by A                         1
-jmp near x         0    09    In/Decrement PC by X                         1
-jmp near y         0    0A    In/Decrement PC by Y                         1
-jmp near z         0    0B    In/Decrement PC by Z                         1
-int imm            0    0C    Interrupt IMM                                2
-rti                0    0D    Return from interrupt                        1
-jmp seg:off        0    0E    Set CS:PC to SEG:OFF                         3
-int #ud            0    0F    Interrupt #UD                                1
---------------------  ------  ----------------------------------------  ----
-mov a, imm         0    10    Move IMM into A                              2
-mov x, imm         0    11    Move IMM into X                              2
-mov y, imm         0    12    Move IMM into Y                              2
-mov z, imm         0    13    Move IMM into Z                              2
-mov reg, imm       1    14    Move IMM into REG                            3
-mov reg, reg       1    14    Move REG into REG                            2
-mov reg, mem       1    14    Move MEM into REG (read memory)              3
-mov mem, reg       1    14    Move REG into MEM (write memory)             3
-mov a, x           0    15    Move X into A                                1
-mov a, y           0    16    Move Y into A                                1
-mov a, z           0    17    Move Z into A                                1
-mov a, a           0    18    No operation                                 1
-mov x, a           0    19    Move A into X                                1
-mov y, a           0    1A    Move A into Y                                1
-mov z, a           0    1B    Move A into Z                                1
-xhg reg, imm       1    1C    Exchange REG with IMM                        3
-xhg reg, reg       1    1C    Exchange REG with REG                        2
-xhg reg, mem       1    1C    Exchange REG with MEM                        3
-xhg mem, reg       1    1C    Exchange MEM with REG                        3
-xhg a, x           0    1D    Exchange A with X                            1
-xhg a, y           0    1E    Exchange A with Y                            1
-xhg a, z           0    1F    Exchange A with Z                            1
---------------------  ------  ----------------------------------------  ----
-jcc imm            0  20..2F  Conditional jump if CC is true               2
---------------------  ------  ----------------------------------------  ----
-sti                0    30    Set IF to 1 (enable interrupts)              1
-cli                0    31    Set IF to 0 (disable interrupts)             1
-call far imm       0    32    Push CS:PC and set CS:PC to ES:IMM           2
-call near imm      0    33    Push PC and in/decrement PC by IMM           2
-call far a         0    34    Push CS:PC and set CS:PC to ES:A             1
-call far x         0    35    Push CS:PC and set CS:PC to ES:X             1
-call far y         0    36    Push CS:PC and set CS:PC to ES:Y             1
-call far z         0    37    Push CS:PC and set CS:PC to ES:Z             1
-call near a        0    38    Push PC and in/decrement PC by A             1
-call near x        0    39    Push PC and in/decrement PC by X             1
-call near y        0    3A    Push PC and in/decrement PC by Y             1
-call near z        0    3B    Push PC and in/decrement PC by Z             1
-ret far            0    3C    Pop CS:PC                                    1
-ret near           0    3D    Pop PC                                       1
-call seg:off       0    3E    Push CS:PC and set CS:PC to SEG:OFF          3
-clf                0    3F    Clear SF, ZF, CF, and OF                     1
---------------------  ------  ----------------------------------------  ----
-add a, imm         0    40    Add IMM to A                                 2
-add a, x           0    41    Add X to A                                   1
-add a, y           0    42    Add Y to A                                   1
-add a, z           0    43    Add Z to A                                   1
-adc a, imm         0    44    Add IMM to A (with carry)                    2
-adc a, x           0    45    Add X to A (with carry)                      1
-adc a, y           0    46    Add Y to A (with carry)                      1
-adc a, z           0    47    Add Z to A (with carry)                      1
-sub a, imm         0    48    Subtract IMM from A                          2
-sub a, x           0    49    Subtract X from A                            1
-sub a, y           0    4A    Subtract Y from A                            1
-sub a, z           0    4B    Subtract Z from A                            1
-sbb a, imm         0    4C    Subtract IMM from A (with carry)             2
-sbb a, x           0    4D    Subtract X from A (with carry)               1
-sbb a, y           0    4E    Subtract Y from A (with carry)               1
-sbb a, z           0    4F    Subtract Z from A (with carry)               1
---------------------  ------  ----------------------------------------  ----
-inc a              0    50    Increment A by 1                             1
-inc x              0    51    Increment X by 1                             1
-inc y              0    52    Increment Y by 1                             1
-inc z              0    53    Increment Z by 1                             1
-dec a              0    54    Decrement A by 1                             1
-dec x              0    55    Decrement X by 1                             1
-dec y              0    56    Decrement Y by 1                             1
-dec z              0    57    Decrement Z by 1                             1
-and a, imm         0    58    Bitwise AND between A and IMM                2
-and a, x           0    59    Bitwise AND between A and X                  1
-and a, y           0    5A    Bitwise AND between A and Y                  1
-and a, z           0    5B    Bitwise AND between A and Z                  1
-or  a, imm         0    5C    Bitwise OR  between A and IMM                2
-or  a, x           0    5D    Bitwise OR  between A and X                  1
-or  a, y           0    5E    Bitwise OR  between A and Y                  1
-or  a, z           0    5F    Bitwise OR  between A and Z                  1
---------------------  ------  ----------------------------------------  ----
-sll a, imm         0    60    Logic shift left A by IMM                    2
-sll a, x           0    61    Logic shift left A by X                      1
-sll a, y           0    62    Logic shift left A by Y                      1
-sll a, z           0    63    Logic shift left A by Z                      1
-slr a, imm         0    64    Logic shift right A by IMM                   2
-slr a, x           0    65    Logic shift right A by X                     1
-slr a, y           0    66    Logic shift right A by Y                     1
-slr a, z           0    67    Logic shift right A by Z                     1
-sar a, imm         0    68    Arithmetic shift right A by IMM              2
-sar a, x           0    69    Arithmetic shift right A by X                1
-sar a, y           0    6A    Arithmetic shift right A by Y                1
-sar a, z           0    6B    Arithmetic shift right A by Z                1
-xor a, a           0    6C    Bitwise XOR between A and A (A = 0)          1
-xor a, x           0    6D    Bitwise XOR between A and X                  1
-xor a, y           0    6E    Bitwise XOR between A and Y                  1
-xor a, z           0    6F    Bitwise XOR between A and Z                  1
---------------------  ------  ----------------------------------------  ----
-tst a, imm         0    70    Bitwise AND between A and IMM (only flags)   2
-tst a, x           0    71    Bitwise AND between A and X (only flags)     1
-tst a, y           0    72    Bitwise AND between A and Y (only flags)     1
-tst a, z           0    73    Bitwise AND between A and Z (only flags)     1
-in  a, imm         0    74    Read A from port IMM                         1
-in  a, x           0    75    Read A from port X                           1
-in  a, y           0    76    Read A from port Y                           1
-in  a, z           0    77    Read A from port Z                           1
-cmp a, imm         0    78    Subtract IMM from A (only flags)             2
-cmp a, x           0    79    Subtract X from A (only flags)               1
-cmp a, y           0    7A    Subtract Y from A (only flags)               1
-cmp a, z           0    7B    Subtract Z from A (only flags)               1
-out a, imm         0    7C    Write A to port IMM                          1
-out a, x           0    7D    Write A to port X                            1
-out a, y           0    7E    Write A to port Y                            1
-out a, z           0    7F    Write A to port Z                            1
---------------------  ------  ----------------------------------------  ----
-add reg, imm       1    80    Add IMM to REG                               3
-add reg, reg       1    80    Add REG to REG                               2
-add reg, mem       1    80    Add MEM to REG                               3
-add mem, reg       1    80    Add REG to MEM                               3
-adc reg, imm       1    81    Add IMM to REG (with carry)                  3
-adc reg, reg       1    81    Add REG to REG (with carry)                  2
-adc reg, mem       1    81    Add MEM to REG (with carry)                  3
-adc mem, reg       1    81    Add REG to MEM (with carry)                  3
-sub reg, imm       1    82    Subtract IMM from REG                        3
-sub reg, reg       1    82    Subtract REG from REG                        2
-sub reg, mem       1    82    Subtract MEM from REG                        3
-sub mem, reg       1    82    Subtract REG from MEM                        3
-sbb reg, imm       1    83    Subtract IMM from REG (with carry)           3
-sbb reg, reg       1    83    Subtract REG from REG (with carry)           2
-sbb reg, mem       1    83    Subtract MEM from REG (with carry)           3
-sbb mem, reg       1    83    Subtract REG from MEM (with carry)           3
-and reg, imm       1    84    Bitwise AND between REG and IMM              3
-and reg, reg       1    84    Bitwise AND between REG and REG              2
-and reg, mem       1    84    Bitwise AND between REG and MEM              3
-and mem, reg       1    84    Bitwise AND between MEM and REG              3
-or  reg, imm       1    85    Bitwise OR  between REG and IMM              3
-or  reg, reg       1    85    Bitwise OR  between REG and REG              2
-or  reg, mem       1    85    Bitwise OR  between REG and MEM              3
-or  mem, reg       1    85    Bitwise OR  between MEM and REG              3
-sll reg, imm       1    86    Logic shift left REG by IMM                  3
-sll reg, reg       1    86    Logic shift left REG by REG                  2
-sll reg, mem       1    86    Logic shift left REG by MEM                  3
-sll mem, reg       1    86    Logic shift left MEM by REG                  3
-slr reg, imm       1    87    Logic shift right REG by IMM                 3
-slr reg, reg       1    87    Logic shift right REG by REG                 2
-slr reg, mem       1    87    Logic shift right REG by MEM                 3
-slr mem, reg       1    87    Logic shift right MEM by REG                 3
-sar reg, imm       1    88    Arithmetic shift right REG by IMM            3
-sar reg, reg       1    88    Arithmetic shift right REG by REG            2
-sar reg, mem       1    88    Arithmetic shift right REG by MEM            3
-sar mem, reg       1    88    Arithmetic shift right MEM by REG            3
-xor reg, imm       1    89    Bitwise XOR between REG and IMM              3
-xor reg, reg       1    89    Bitwise XOR between REG and REG              2
-xor reg, mem       1    89    Bitwise XOR between REG and MEM              3
-xor mem, reg       1    89    Bitwise XOR between MEM and REG              3
-cmp reg, imm       1    8A    Subtract IMM from REG (only flags)           3
-cmp reg, reg       1    8A    Subtract REG from REG (only flags)           2
-cmp reg, mem       1    8A    Subtract MEM from REG (only flags)           3
-cmp mem, reg       1    8A    Subtract REG from MEM (only flags)           3
-tst reg, imm       1    8B    Bitwise AND between REG and IMM (only flags) 3
-tst reg, reg       1    8B    Bitwise AND between REG and REG (only flags) 2
-tst reg, mem       1    8B    Bitwise AND between REG and MEM (only flags) 3
-tst mem, reg       1    8B    Bitwise AND between MEM and REG (only flags) 3
-int #ud            0    8C    Interrupt #UD                                1
-int #ud            0    8D    Interrupt #UD                                1
-int #ud            0    8E    Interrupt #UD                                1
-int #ud            0    8F    Interrupt #UD                                1
---------------------  ------  ----------------------------------------  ----
-setcc              0  90..9F  Set A to 1 if CC is true, else 0             1
---------------------  ------  ----------------------------------------  ----
-psh a              0    A0    Push A onto the stack                        1
-psh x              0    A1    Push A onto the stack                        1
-psh y              0    A2    Push A onto the stack                        1
-psh z              0    A3    Push A onto the stack                        1
-pop a              0    A4    Pop A from the stack                         1
-pop x              0    A5    Pop A from the stack                         1
-pop y              0    A6    Pop A from the stack                         1
-pop z              0    A7    Pop A from the stack                         1
-psh imm            0    A8    Push IMM onto the stack                      2
-psh mem            0    A9    Push MEM onto the stack                      2
-psh ds:mem         0    AA    Push MEM onto the stack                      2
-psh es:mem         0    AB    Push MEM onto the stack                      2
-int #ud            0    AC    Interrupt #UD                                1
-pop mem            0    AD    Pop MEM from the stack                       2
-pop ds:mem         0    AE    Pop MEM from the stack                       2
-pop es:mem         0    AF    Pop MEM from the stack                       2
---------------------  ------  ----------------------------------------  ----
-psh cs             0    B0    Push CS onto the stack                       1
-psh ds             0    B1    Push DS onto the stack                       1
-psh ss             0    B2    Push SS onto the stack                       1
-psh es             0    B3    Push ES onto the stack                       1
-pop cs             0    B4    Pop CS from the stack                        1
-pop ds             0    B5    Pop DS from the stack                        1
-pop ss             0    B6    Pop SS from the stack                        1
-pop es             0    B7    Pop ES from the stack                        1
-psh sp             0    B8    Push SP onto the stack                       1
-psh sr             0    B9    Push SR onto the stack                       1
-int #ud            0    BA    Interrupt #UD                                1
-int #ud            0    BB    Interrupt #UD                                1
-pop sp             0    BC    Pop SP from the stack                        1
-pop sr             0    BD    Pop SR from the stack                        1
-mks a, x, y        0    BE    Map segment X to A using Y as attributes     1
-rms a              0    BF    Unmap segment A                              1
+.==============================================================================.
+| Control Flow - Halt, Interrupts, and Jumps                                   |
+|==============================================================================|
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 00000000 | HLT                  | Halt the execution, wait for IRQ 0.        |
+|----------|----------------------|--------------------------------------------|
+| 00000001 | HCF                  | Halt the execution, quit.                  |
+|----------|----------------------|--------------------------------------------|
+| 00000010 | INT I                | Interrupt the execution using              |
+| iiiiiiii |                      | - (I >> 0) & 0xF as interrupt source;      |
+|          |                      | - (I >> 4) & 0xF as interrupt cause.       |
+|----------|----------------------|--------------------------------------------|
+| 00000011 | RTI                  | Return from interrupt subroutine.          |
+|----------|----------------------|--------------------------------------------|
+| 00000100 | JMP NEAR I           | Jump to memory location pointed by IP      |
+| iiiiiiii |                      | in/decremented by I.                       |
+|----------|----------------------|--------------------------------------------|
+| 00000101 | JMP FAR  I           | Jump to memory location pointed by S:I.    |
+|----------|----------------------|--------------------------------------------|
+| 00000110 | CLI                  | Set IF to 0.                               |
+|----------|----------------------|--------------------------------------------|
+| 00000111 | STI                  | Set IF to 1.                               |
+|----------|----------------------|--------------------------------------------|
+| 000010rr | JMP NEAR reg[R]      | Jump to memory location pointed by IP      |
+|          |                      | in/decremented by reg[R].                  |
+|----------|----------------------|--------------------------------------------|
+| 000011rr | JMP FAR  reg[R]      | Jump to memory location pointed by         |
+|          |                      | S:reg[R].                                  |
+|==============================================================================|
+| Control Flow - Jump to and Return from Subroutines                           |
+|==============================================================================|
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 00010000 | RST                  | Jump to reset interrupt service routine.   |
+|----------|----------------------|--------------------------------------------|
+| 00010001 | BRK                  | Jump to debugger service routine when a    |
+|          |                      | breakpoint has been hit.                   |
+|----------|----------------------|--------------------------------------------|
+| 00010010 | SYS.JSR ACC          | Jump to system subroutine pointed by       |
+|          |                      | accumulator.                               |
+|----------|----------------------|--------------------------------------------|
+| 00010011 | SYS.RET              | Return from system subroutine.             |
+|----------|----------------------|--------------------------------------------|
+| 00010100 | JSR NEAR I           | Jump to subroutine starting at memory      |
+| iiiiiiii |                      | location pointed by IP in/decremented by I.|
+|----------|----------------------|--------------------------------------------|
+| 00010101 | JSR FAR  I           | Jump to subroutine starting at memory      |
+| iiiiiiii |                      | location pointed by S:I.                   |
+|----------|----------------------|--------------------------------------------|
+| 00010110 | RET NEAR             | Return from subroutine invoked by a near   |
+|          |                      | jump instruction.                          |
+|----------|----------------------|--------------------------------------------|
+| 00010111 | RET FAR              | Return from subroutine invoked by a far    |
+|          |                      | jump instruction.                          |
+|----------|----------------------|--------------------------------------------|
+| 000110rr | JSR NEAR reg[R]      | Jump to subroutine starting at memory      |
+|          |                      | location pointed by IP in/decremented by   |
+|          |                      | reg[R].                                    |
+|----------|----------------------|--------------------------------------------|
+| 000111rr | JSR FAR  reg[R]      | Jump to subroutine starting at memory      |
+|          |                      | location pointed by S:reg[R].              |
+|==============================================================================|
+| Control Flow - Conditional Near Jumps                                        |
+|==============================================================================|
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 00100000 | JNC NEAR I           | Jump to memory location pointed by IP      |
+| iiiiiiii | JAE NEAR I           | in/decremented by I if CF is 0.            |
+|----------|----------------------|--------------------------------------------|
+| 00100001 | JC  NEAR I           | Jump to memory location pointed by IP      |
+| iiiiiiii | JB  NEAR I           | in/decremented by I if CF is 1.            |
+|----------|----------------------|--------------------------------------------|
+| 00100010 | JNZ NEAR I           | Jump to memory location pointed by IP      |
+| iiiiiiii | JNE NEAR I           | in/decremented by I if ZF is 0.            |
+|----------|----------------------|--------------------------------------------|
+| 00100011 | JZ  NEAR I           | Jump to memory location pointed by IP      |
+| iiiiiiii | JE  NEAR I           | in/decremented by I if ZF is 1.            |
+|----------|----------------------|--------------------------------------------|
+| 00100100 | JNS NEAR I           | Jump to memory location pointed by IP      |
+| iiiiiiii |                      | in/decremented by I if SF is 0.            |
+|----------|----------------------|--------------------------------------------|
+| 00100101 | JS  NEAR I           | Jump to memory location pointed by IP      |
+| iiiiiiii |                      | in/decremented by I if SF is 1.            |
+|----------|----------------------|--------------------------------------------|
+| 00100110 | JNO NEAR I           | Jump to memory location pointed by IP      |
+| iiiiiiii |                      | in/decremented by I if OF is 0.            |
+|----------|----------------------|--------------------------------------------|
+| 00100111 | JO  NEAR I           | Jump to memory location pointed by IP      |
+| iiiiiiii |                      | in/decremented by I if OF is 1.            |
+|----------|----------------------|--------------------------------------------|
+| 00101000 | JA  NEAR I           | Jump to memory location pointed by IP      |
+| iiiiiiii |                      | in/decremented by I if CF is 0 and ZF is 0.|
+|----------|----------------------|--------------------------------------------|
+| 00101001 | JBE NEAR I           | Jump to memory location pointed by IP      |
+| iiiiiiii |                      | in/decremented by I if CF is 1 or ZF is 1. |
+|----------|----------------------|--------------------------------------------|
+| 00101010 | JG  NEAR I           | Jump to memory location pointed by IP      |
+| iiiiiiii |                      | in/decremented by I if SF is equal to OF   |
+|          |                      | and ZF is 0.                               |
+|----------|----------------------|--------------------------------------------|
+| 00101011 | JLE NEAR I           | Jump to memory location pointed by IP      |
+| iiiiiiii |                      | in/decremented by I if SF is not equal to  |
+|          |                      | OF or ZF is 1.                             |
+|----------|----------------------|--------------------------------------------|
+| 00101100 | JL  NEAR I           | Jump to memory location pointed by IP      |
+| iiiiiiii |                      | in/decremented by I if SF is not equal to  |
+|          |                      | OF.                                        |
+|----------|----------------------|--------------------------------------------|
+| 00101101 | JGE NEAR I           | Jump to memory location pointed by IP      |
+| iiiiiiii |                      | in/decremented by I if SF is equal to OF.  |
+|----------|----------------------|--------------------------------------------|
+| 00101110 | JMP NEAR reg[R], C   | Jump to memory location pointed by IP      |
+| ccccbrrr |                      | in/decremented by reg[R] if C is B.        |
+|          |                      | If C is 1110b or 1111b, INT #UD is raised. |
+|----------|----------------------|--------------------------------------------|
+| 00101111 | JSR NEAR reg[R], C   | Jump to memory location pointed by IP      |
+| ccccbrrr |                      | in/decremented by reg[R] if C is B.        |
+|          |                      | If C is 1110b or 1111b, INT #UD is raised. |
+|==============================================================================|
+| Control Flow - Conditional Far Jumps                                         |
+|==============================================================================|
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 00110000 | JNC FAR  I           | Jump to memory location pointed by S:I if  |
+| iiiiiiii | JAE FAR  I           | CF is 0.                                   |
+|----------|----------------------|--------------------------------------------|
+| 00110001 | JC  FAR  I           | Jump to memory location pointed by S:I if  |
+| iiiiiiii | JB  FAR  I           | CF is 1.                                   |
+|----------|----------------------|--------------------------------------------|
+| 00110010 | JNZ FAR  I           | Jump to memory location pointed by S:I if  |
+| iiiiiiii | JNE FAR  I           | ZF is 0.                                   |
+|----------|----------------------|--------------------------------------------|
+| 00110011 | JZ  FAR  I           | Jump to memory location pointed by S:I if  |
+| iiiiiiii | JE  FAR  I           | ZF is 1.                                   |
+|----------|----------------------|--------------------------------------------|
+| 00110100 | JNS FAR  I           | Jump to memory location pointed by S:I if  |
+| iiiiiiii |                      | SF is 0.                                   |
+|----------|----------------------|--------------------------------------------|
+| 00110101 | JS  FAR  I           | Jump to memory location pointed by S:I if  |
+| iiiiiiii |                      | SF is 1.                                   |
+|----------|----------------------|--------------------------------------------|
+| 00110110 | JNO FAR  I           | Jump to memory location pointed by S:I if  |
+| iiiiiiii |                      | OF is 0.                                   |
+|----------|----------------------|--------------------------------------------|
+| 00110111 | JO  FAR  I           | Jump to memory location pointed by S:I if  |
+| iiiiiiii |                      | OF is 1.                                   |
+|----------|----------------------|--------------------------------------------|
+| 00111000 | JA  FAR  I           | Jump to memory location pointed by S:I if  |
+| iiiiiiii |                      | CF is 0 and ZF is 0.                       |
+|----------|----------------------|--------------------------------------------|
+| 00111001 | JBE FAR  I           | Jump to memory location pointed by S:I if  |
+| iiiiiiii |                      | CF is 1 or ZF is 1.                        |
+|----------|----------------------|--------------------------------------------|
+| 00111010 | JG  FAR  I           | Jump to memory location pointed by S:I if  |
+| iiiiiiii |                      | SF is equal to OF and ZF is 0.             |
+|----------|----------------------|--------------------------------------------|
+| 00111011 | JLE FAR  I           | Jump to memory location pointed by S:I if  |
+| iiiiiiii |                      | SF is not equal to OF or ZF is 1.          |
+|----------|----------------------|--------------------------------------------|
+| 00111100 | JL  FAR  I           | Jump to memory location pointed by S:I if  |
+| iiiiiiii |                      | SF is not equal to OF.                     |
+|----------|----------------------|--------------------------------------------|
+| 00111101 | JGE FAR  I           | Jump to memory location pointed by S:I if  |
+| iiiiiiii |                      | SF is equal to OF.                         |
+|----------|----------------------|--------------------------------------------|
+| 00111110 | JMP FAR  reg[R], C   | Jump to memory location pointed by S:reg[R]|
+| ccccbrrr |                      | if C is B.                                 |
+|          |                      | If C is 1110b or 1111b, INT #UD is raised. |
+|----------|----------------------|--------------------------------------------|
+| 00111111 | JSR FAR  reg[R], C   | Jump to memory location pointed by S:reg[R]|
+| ccccbrrr |                      | if C is B.                                 |
+|          |                      | If C is 1110b or 1111b, INT #UD is raised. |
+|==============================================================================|
+| Data Operations - Move Data from Source to Destination, Exchange Data,       |
+|                   and Push onto and Pop from Stack                           |
+|==============================================================================|
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 01000000 | MOV reg[R],          | Move data from reg[M] in/decremented by I  |
+| 00rrrmmm |     reg[M] + I       | to reg[R].                                 |
+| iiiiiiii |                      |                                            |
+| 01000000 | MOV reg[R],          | Move data from memory location pointed by  |
+| 01rrrmmm |     mem[S:reg[M] + I]| S:reg[R] in/decremented by I to reg[R].    |
+| iiiiiiii |                      |                                            |
+| 01000000 | MOV mem[S:reg[M] + I]| Move data from reg[R] to memory location   |
+| 10rrrmmm |     reg[R]           | pointed by S:reg[R] in/decremented by I.   |
+| iiiiiiii |                      |                                            |
+| 01000000 | MOV reg[R], reg[M]   | Move data from reg[M] to reg[R].           |
+| 11rrrmmm |                      |                                            |
+|----------|----------------------|--------------------------------------------|
+| 01000001 | DS                   | Prefix: Use DS as S.                       |
+|----------|----------------------|--------------------------------------------|
+| 01000010 | SS                   | Prefix: Use SS as S.                       |
+|----------|----------------------|--------------------------------------------|
+| 01000011 | ES                   | Prefix: Use ES as S.                       |
+|----------|----------------------|--------------------------------------------|
+| 01000100 | PSH reg[R]           | Push reg[R] onto the stack.                |
+| 00000rrr |                      |                                            |
+| 01000100 | PSH seg[R]           | Push seg[R] onto the stack.                |
+| 000010rr |                      |                                            |
+| 01000100 | PSH IDT              | Push IDT onto the stack.                   |
+| 00001100 |                      |                                            |
+| 01000100 | PSH MDT              | Push MDT onto the stack.                   |
+| 00001101 |                      |                                            |
+| 01000100 | PSH MRR              | Push MRR onto the stack.                   |
+| 00001110 |                      |                                            |
+| 01000100 | PSH CSR              | Push CSR onto the stack.                   |
+| 00001111 |                      |                                            |
+| 01000100 | PSH IMR[R]           | Push IMR of IRQ R onto the stack.          |
+| 10000rrr |                      |                                            |
+| 01000100 | PSH IRR[R]           | Push IRR of IRQ R onto the stack.          |
+| 10001rrr |                      |                                            |
+| 01000100 | PSH MCR              | Push MCR onto the stack.                   |
+| 10001000 |                      |                                            |
+| 01000100 | PSH CYR[R]           | Push CYR[R] onto the stack.                |
+| 100011rr |                      |                                            |
+|----------|----------------------|--------------------------------------------|
+| 01000101 | POP reg[R]           | Pop reg[R] from the stack.                 |
+| 00000rrr |                      |                                            |
+| 01000101 | POP seg[R]           | Pop seg[R] from the stack.                 |
+| 000010rr |                      |                                            |
+| 01001000 | POP IDT              | Pop IDT from the stack.                    |
+| 00001100 |                      |                                            |
+| 01001000 | POP MDT              | Pop MDT from the stack.                    |
+| 00001101 |                      |                                            |
+| 01001000 | POP MRR              | Pop MRR from the stack.                    |
+| 00001110 |                      |                                            |
+| 01001000 | POP CSR              | Pop CSR from the stack.                    |
+| 00001111 |                      |                                            |
+| 01001000 | POP IMR[R]           | Pop IMR of IRQ R from the stack.           |
+| 10000rrr |                      |                                            |
+|----------|----------------------|--------------------------------------------|
+| 01000110 | PSH CTX              | Push context onto the stack.               |
+|----------|----------------------|--------------------------------------------|
+| 01000111 | POP CTX              | Pop context from the stack.                |
+|----------|----------------------|--------------------------------------------|
+| 01001rrr | XHG ACC, reg[R]      | Exchange data between accumulator and      |
+|          |                      | reg[R].                                    |
+|==============================================================================|
+| Data Operations - Move Data from Source to Destination                       |
+|==============================================================================|
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 01010rrr | MOV reg[R], ACC      | Move data from accumulator to reg[R].      |
+|----------|----------------------|--------------------------------------------|
+| 01011rrr | MOV ACC, reg[R]      | Move data from reg[R] to accumulator.      |
+|==============================================================================|
+| Data Operations - Operations between Accumulator and Immediate Value, and    |
+|                   I/O Operations Using Immediate Value as Port Number        |
+|==============================================================================|
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 01100000 | ADD ACC, I           | Add I to accumulator.                      |
+| iiiiiiii |                      |                                            |
+|----------|----------------------|--------------------------------------------|
+| 01100001 | ADC ACC, I           | Add I + CF to accumulator.                 |
+| iiiiiiii |                      |                                            |
+|----------|----------------------|--------------------------------------------|
+| 01100010 | SUB ACC, I           | Subtract I from accumulator.               |
+| iiiiiiii |                      |                                            |
+|----------|----------------------|--------------------------------------------|
+| 01100011 | SBB ACC, I           | Subtract I + CF from accumulator.          |
+| iiiiiiii |                      |                                            |
+|----------|----------------------|--------------------------------------------|
+| 01100100 | AND ACC, I           | Bitwise AND between accumulator and I.     |
+| iiiiiiii |                      |                                            |
+|----------|----------------------|--------------------------------------------|
+| 01100101 | OR  ACC, I           | Bitwise OR between accumulator and I.      |
+| iiiiiiii |                      |                                            |
+|----------|----------------------|--------------------------------------------|
+| 01100110 | SRL ACC, I           | Shift right accumulator logically by I.    |
+| iiiiiiii |                      |                                            |
+|----------|----------------------|--------------------------------------------|
+| 01100111 | SLL ACC, I           | Shift left accumulator logically by I.     |
+| iiiiiiii |                      |                                            |
+|----------|----------------------|--------------------------------------------|
+| 01100000 | SRA ACC, I           | Shift right accumulator arithmetically by  |
+| iiiiiiii |                      | I.                                         |
+|----------|----------------------|--------------------------------------------|
+| 01100001 | XOR ACC, I           | Bitwise XOR between accumulator and I.     |
+| iiiiiiii |                      |                                            |
+|----------|----------------------|--------------------------------------------|
+| 01100010 | CMP ACC, I           | Subtract I from accumulator without update |
+| iiiiiiii |                      | the accumulator.                           |
+|----------|----------------------|--------------------------------------------|
+| 01100011 | SBB ACC, I           | Bitwise AND between accumulator and I      |
+| iiiiiiii |                      | without update the accumulator.            |
+|----------|----------------------|--------------------------------------------|
+| 01100100 | IN  ACC, I           | Move data from port I to accumulator.      |
+| iiiiiiii |                      |                                            |
+|----------|----------------------|--------------------------------------------|
+| 01100101 | OUT ACC, I           | Move data from accumulator to port I.      |
+| iiiiiiii |                      |                                            |
+|----------|----------------------|--------------------------------------------|
+| 01100110 | INT #UD              | Undefined instruction.                     |
+|----------|----------------------|--------------------------------------------|
+| 01100111 | INT #UD              | Undefined instruction.                     |
+|==============================================================================|
+| Data Operations - Increment, and Decrement Register by 1                     |
+|==============================================================================|
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 01110rrr | INC reg[R]           | Increment reg[R] by 1.                     |
+|----------|----------------------|--------------------------------------------|
+| 01111rrr | DEC reg[R]           | Decrement reg[R] by 1.                     |
+|==============================================================================|
+| Data Operations - Add (with and without Carry) Register to Accumulator       |
+|==============================================================================|
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 10000rrr | ADD ACC, reg[R]      | Add reg[R] to accumulator.                 |
+|----------|----------------------|--------------------------------------------|
+| 10001rrr | ADC ACC, reg[R]      | Add reg[R] + CF to accumulator.            |
+|==============================================================================|
+| Data Operations - Subtract (with and without Carry) Register to Accumulator  |
+|==============================================================================|
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 10010rrr | SUB ACC, reg[R]      | Subtract reg[R] from accumulator.          |
+|----------|----------------------|--------------------------------------------|
+| 10011rrr | SBB ACC, reg[R]      | Subtract reg[R] + CF from accumulator.     |
+|==============================================================================|
+| Data Operations - Bitwise AND and OR between Accumulator and Register        |
+|==============================================================================|
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 10100rrr | AND ACC, reg[R]      | Bitwise AND between accumulator and reg[R].|
+|----------|----------------------|--------------------------------------------|
+| 10101rrr | OR  ACC, reg[R]      | Bitwise OR between accumulator and reg[R]. |
+|==============================================================================|
+| Data Operations - Shift Logically Accumulator by Register Bits               |
+|==============================================================================|
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 10110rrr | SRL ACC, reg[R]      | Shift right accumulator logically by reg[R]|
+|          |                      | bits.                                      |
+|----------|----------------------|--------------------------------------------|
+| 10111rrr | SLL ACC, reg[R]      | Shift left accumulator logically by reg[R] |
+|                                 | bits.                                      |
+|==============================================================================|
+| Data Operations - Shift Arithmetically Accumulator by Register Bits, and XOR |
+|                   between Accumulator and Register                           |
+|==============================================================================|
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 11000rrr | SRA ACC, reg[R]      | Shift right accumulator arithmetically by  |
+|          |                      | reg[R] bits.                               |
+|----------|----------------------|--------------------------------------------|
+| 11001rrr | XOR ACC, reg[R]      | Bitwise XOR between accumulator and reg[R].|
+|==============================================================================|
+| Data Operations - Compare and Test Accumulator with Register                 |
+|==============================================================================|
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 11010rrr | CMP ACC, reg[R]      | Subtract reg[R] from accumulator without   |
+|          |                      | update the accumulator.                    |
+|----------|----------------------|--------------------------------------------|
+| 11011rrr | TST ACC, reg[R]      | Bitwise AND between accumulator and reg[R] |
+|          |                      | without update the accumulator.            |
+|==============================================================================|
+| Data Operations - Operations with ModRM                                      |
+|==============================================================================|
+| Encoding | Assembly-like Syntax | Description                                |
+|==========|======================|============================================|
+| 1110xxxx | INT #UD              | Undefined instruction. (TODO)              |
+|==============================================================================|
+| Reserved Operations                                                          |
+|==============================================================================|
+| 1111xxxx | INT #UD              | Undefined instruction.                     |
+'=============================================================================='
 ```

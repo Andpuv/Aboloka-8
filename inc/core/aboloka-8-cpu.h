@@ -33,39 +33,51 @@ struct aboloka_8_ram_t;
 #   define ABOLOKA_8_CPU_REG_5  0x5
 #   define ABOLOKA_8_CPU_REG_6  0x6
 #   define ABOLOKA_8_CPU_REG_7  0x7
-#   define ABOLOKA_8_CPU_N_REGS 0x8
+#   define ABOLOKA_8_CPU_REG_0S 0x8
+#   define ABOLOKA_8_CPU_REG_1S 0x9
+#   define ABOLOKA_8_CPU_REG_2S 0xA
+#   define ABOLOKA_8_CPU_REG_3S 0xB
+#   define ABOLOKA_8_CPU_REG_4S 0xC
+#   define ABOLOKA_8_CPU_REG_5S 0xD
+#   define ABOLOKA_8_CPU_REG_6S 0xE
+#   define ABOLOKA_8_CPU_REG_7S 0xF
+#   define ABOLOKA_8_CPU_N_REGS 0x10
 
-#   define ABOLOKA_8_CPU_A      0x0
-#   define ABOLOKA_8_CPU_X      0x1
-#   define ABOLOKA_8_CPU_Y      0x2
-#   define ABOLOKA_8_CPU_Z      0x3
+#   define ABOLOKA_8_CPU_AX     0x0
+#   define ABOLOKA_8_CPU_BX     0x1
+#   define ABOLOKA_8_CPU_CX     0x2
+#   define ABOLOKA_8_CPU_DX     0x3
+#   define ABOLOKA_8_CPU_SP     0x4
+#   define ABOLOKA_8_CPU_BP     0x5
+#   define ABOLOKA_8_CPU_DI     0x6
+#   define ABOLOKA_8_CPU_SI     0x7
 
 #   define ABOLOKA_8_CPU_SEG_0  0x0
 #   define ABOLOKA_8_CPU_SEG_1  0x1
 #   define ABOLOKA_8_CPU_SEG_2  0x2
 #   define ABOLOKA_8_CPU_SEG_3  0x3
-#   define ABOLOKA_8_CPU_SEG_4  0x4
-#   define ABOLOKA_8_CPU_SEG_5  0x5
-#   define ABOLOKA_8_CPU_SEG_6  0x6
-#   define ABOLOKA_8_CPU_SEG_7  0x7
+#   define ABOLOKA_8_CPU_SEG_0S 0x4
+#   define ABOLOKA_8_CPU_SEG_1S 0x5
+#   define ABOLOKA_8_CPU_SEG_2S 0x6
+#   define ABOLOKA_8_CPU_SEG_3S 0x7
 #   define ABOLOKA_8_CPU_N_SEGS 0x8
 
-#   define ABOLOKA_8_CPU_CS     0x0 /* Code Segment            */
-#   define ABOLOKA_8_CPU_DS     0x1 /* Data Segment            */
-#   define ABOLOKA_8_CPU_SS     0x2 /* Stack Segment           */
-#   define ABOLOKA_8_CPU_ES     0x3 /* Extra data/code Segment */
+#   define ABOLOKA_8_CPU_CS     0x0
+#   define ABOLOKA_8_CPU_DS     0x1
+#   define ABOLOKA_8_CPU_SS     0x2
+#   define ABOLOKA_8_CPU_ES     0x3
 
 #   define ABOLOKA_8_CPU_N_INTS 0x80
 #   define ABOLOKA_8_CPU_N_MAPS 0x80
 
 #   define ABOLOKA_8_CPU_CF UINT8_C(0x01)
-#   define ABOLOKA_8_CPU_1F UINT8_C(0x02)
-#   define ABOLOKA_8_CPU_ZF UINT8_C(0x04)
-#   define ABOLOKA_8_CPU_SF UINT8_C(0x08)
-#   define ABOLOKA_8_CPU_OF UINT8_C(0x10)
-#   define ABOLOKA_8_CPU_IF UINT8_C(0x20)
-#   define ABOLOKA_8_CPU_UF UINT8_C(0x40)
-#   define ABOLOKA_8_CPU_TF UINT8_C(0x80)
+#   define ABOLOKA_8_CPU_ZF UINT8_C(0x02)
+#   define ABOLOKA_8_CPU_SF UINT8_C(0x04)
+#   define ABOLOKA_8_CPU_OF UINT8_C(0x08)
+#   define ABOLOKA_8_CPU_IF UINT8_C(0x10)
+#   define ABOLOKA_8_CPU_TF UINT8_C(0x20)
+#   define ABOLOKA_8_CPU_LF UINT8_C(0x40)
+#   define ABOLOKA_8_CPU_UF UINT8_C(0x80)
 
 struct aboloka_8_ir_t {
   uint8_t queue [ 0x4 ];
@@ -74,8 +86,8 @@ struct aboloka_8_ir_t {
 };
 
 struct aboloka_8_ins_t {
-  uint16_t pc;
-  int      ip;
+  uint16_t ip;
+  int      ip_queue;
   int      opcode;
   int      stage;
   int      stages;
@@ -87,6 +99,8 @@ struct aboloka_8_ins_t {
   uint8_t  src;
   uint8_t  seg;
   uint8_t  ofs;
+  uint16_t addr;
+  uint8_t  data;
 };
 
 struct aboloka_8_cpu_t {
@@ -95,10 +109,10 @@ struct aboloka_8_cpu_t {
   bool                     quit;
   int                      stage;
   int                      target_stage;
-  uint16_t                 cycles;
+  uint32_t                 cycles;
   struct aboloka_8_ins_t   ins;
   struct aboloka_8_ir_t    ir;
-  uint8_t                  pc;
+  uint8_t                  ip;
   uint8_t                  csr;
   uint8_t                  mrr;
   uint8_t                  mcr;
@@ -106,11 +120,8 @@ struct aboloka_8_cpu_t {
   uint8_t                  irr [ ABOLOKA_8_CPU_N_IRQS ];
   uint16_t                 idt;
   uint16_t                 mdt;
-  uint8_t                  sp;
   uint8_t                  regs [ ABOLOKA_8_CPU_N_REGS ];
   uint8_t                  segs [ ABOLOKA_8_CPU_N_SEGS ];
-  uint16_t                 __idt__ [ ABOLOKA_8_CPU_N_INTS ];
-  uint16_t                 __mdt__ [ ABOLOKA_8_CPU_N_MAPS ];
 };
 
 __ABOLOKA_8_CORE_API__

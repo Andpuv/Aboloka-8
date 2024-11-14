@@ -1,0 +1,32 @@
+\documentclass[a4paper,12pt]{book}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+
+\usepackage[backend=biber,style=ieee]{biblatex}
+\addbibresource{references.bib}
+
+\usepackage{titlesec}
+
+\titleformat{\chapter}[display]
+	{\normalfont\huge\bfseries}
+	{}
+	{0pt}
+	{\Huge}
+
+\begin{document}
+
+\author{Andpuv}
+\title{Aboloka-8 Reference Manual\\\large{Revision 1.0}}
+\date{\today}
+
+\frontmatter
+\maketitle
+\tableofcontents
+
+\mainmatter
+\include{./chapters/introduction.tex}
+\backmatter
+
+% bibliography, glossary and index would go here.
+
+\end{document}

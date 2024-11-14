@@ -24,21 +24,33 @@
 #   define CPU_REG_5  ABOLOKA_8_CPU_REG_5
 #   define CPU_REG_6  ABOLOKA_8_CPU_REG_6
 #   define CPU_REG_7  ABOLOKA_8_CPU_REG_7
+#   define CPU_REG_0S ABOLOKA_8_CPU_REG_0S
+#   define CPU_REG_1S ABOLOKA_8_CPU_REG_1S
+#   define CPU_REG_2S ABOLOKA_8_CPU_REG_2S
+#   define CPU_REG_3S ABOLOKA_8_CPU_REG_3S
+#   define CPU_REG_4S ABOLOKA_8_CPU_REG_4S
+#   define CPU_REG_5S ABOLOKA_8_CPU_REG_5S
+#   define CPU_REG_6S ABOLOKA_8_CPU_REG_6S
+#   define CPU_REG_7S ABOLOKA_8_CPU_REG_7S
 #   define CPU_N_REGS ABOLOKA_8_CPU_N_REGS
 
-#   define CPU_A      ABOLOKA_8_CPU_A
-#   define CPU_X      ABOLOKA_8_CPU_X
-#   define CPU_Y      ABOLOKA_8_CPU_Y
-#   define CPU_Z      ABOLOKA_8_CPU_Z
+#   define CPU_AX     ABOLOKA_8_CPU_AX
+#   define CPU_BX     ABOLOKA_8_CPU_BX
+#   define CPU_CX     ABOLOKA_8_CPU_CX
+#   define CPU_DX     ABOLOKA_8_CPU_DX
+#   define CPU_SP     ABOLOKA_8_CPU_SP
+#   define CPU_BP     ABOLOKA_8_CPU_BP
+#   define CPU_DI     ABOLOKA_8_CPU_DI
+#   define CPU_SI     ABOLOKA_8_CPU_SI
 
 #   define CPU_SEG_0  ABOLOKA_8_CPU_SEG_0
 #   define CPU_SEG_1  ABOLOKA_8_CPU_SEG_1
 #   define CPU_SEG_2  ABOLOKA_8_CPU_SEG_2
 #   define CPU_SEG_3  ABOLOKA_8_CPU_SEG_3
-#   define CPU_SEG_4  ABOLOKA_8_CPU_SEG_4
-#   define CPU_SEG_5  ABOLOKA_8_CPU_SEG_5
-#   define CPU_SEG_6  ABOLOKA_8_CPU_SEG_6
-#   define CPU_SEG_7  ABOLOKA_8_CPU_SEG_7
+#   define CPU_SEG_0S ABOLOKA_8_CPU_SEG_0S
+#   define CPU_SEG_1S ABOLOKA_8_CPU_SEG_1S
+#   define CPU_SEG_2S ABOLOKA_8_CPU_SEG_2S
+#   define CPU_SEG_3S ABOLOKA_8_CPU_SEG_3S
 #   define CPU_N_SEGS ABOLOKA_8_CPU_N_SEGS
 
 #   define CPU_CS     ABOLOKA_8_CPU_CS
@@ -50,13 +62,13 @@
 #   define CPU_N_MAPS ABOLOKA_8_CPU_N_MAPS
 
 #   define CPU_CF     ABOLOKA_8_CPU_CF
-#   define CPU_1F     ABOLOKA_8_CPU_1F
 #   define CPU_ZF     ABOLOKA_8_CPU_ZF
 #   define CPU_SF     ABOLOKA_8_CPU_SF
 #   define CPU_OF     ABOLOKA_8_CPU_OF
 #   define CPU_IF     ABOLOKA_8_CPU_IF
-#   define CPU_UF     ABOLOKA_8_CPU_UF
 #   define CPU_TF     ABOLOKA_8_CPU_TF
+#   define CPU_LF     ABOLOKA_8_CPU_LF
+#   define CPU_UF     ABOLOKA_8_CPU_UF
 
 void cpu_update_flags (
   struct aboloka_8_cpu_t * self,
@@ -79,25 +91,25 @@ void cpu_interruption (
 #   define CPU_EXCEPTION_CAUSE_UD 4 /* UnDefined instruction */
 #   define CPU_EXCEPTION_CAUSE_SF 5 /* Segmentation Fault    */
 #   define CPU_EXCEPTION_CAUSE_BE 6 /* Bus Error             */
-#   define CPU_EXCEPTION_CAUSE_KP 7 /* Kernel Protection     */
+#   define CPU_EXCEPTION_CAUSE_CP 7 /* Core Protection       */
 
 void cpu_exception (
   struct aboloka_8_cpu_t * self,
   uint8_t                  cause
 );
 
-bool cpu_read (
+bool cpu_read_mem (
   struct aboloka_8_cpu_t * self,
   uint8_t                  seg,
   uint8_t                  ofs,
-  uint8_t *                val
+  uint8_t *                data
 );
 
-bool cpu_write (
+bool cpu_write_mem (
   struct aboloka_8_cpu_t * self,
   uint8_t                  seg,
   uint8_t                  ofs,
-  uint8_t                  val
+  uint8_t                  data
 );
 
 #   define CPU_STAGE_IDLE       -1

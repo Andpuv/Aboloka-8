@@ -1,0 +1,7 @@
+\chapter{Introduction}
+
+\indent Aboloka-8 is a fantasy computer designed by Avuxo\footnote{https://www.github.com/Avuxo} and inspired by Soviet-era retro computers.
+This project is different from fantasy retro consoles like PICO-8\footnote{https://www.lexaloffle.com/pico-8.php}, TIC-80\footnote{https://www.tic80.com/}, and co. because it aims to provide a sandbox where you can experiment with retro user experience, and maybe more.
+\\
+\\
+\noindent When I started contributing to this project, I set a goal: \textit{is it possible to make Aboloka-8 a retro computer with a modern ISA\footnote{Instruction Set Architecture}?} Given the incompatibility between my vision and Avuxo's, I decided to implement my architecture as an extension of the proposed one. While designing the instruction set, I quickly realized that it is difficult to extend because of the out-of-order op codes. Not that it wasn't possible, but rather that it would have been more difficult to make the decoder. To save myself the trouble, I have decided to build one from scratch, inspired by Intel's 32-bit processors (specifically, the i80386). To avoid tearing up the initial project, I preferred to work on a \textit{legacy} mode that allows you to switch to the set of instructions documented here\footnote{https://www.github.com/Avuxo/Aboloka-8} with some additions to allow switching from one mode to another.
