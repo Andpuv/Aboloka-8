@@ -8,6 +8,7 @@
 #   include "aboloka-8-api.h"
 
 struct aboloka_8_ram_t;
+struct aboloka_8_cpu_t;
 
 #   define ABOLOKA_8_CPU_SEG_SIZE_LOG2 8
 #   define ABOLOKA_8_CPU_SEG_SIZE                                              \
@@ -103,6 +104,18 @@ struct aboloka_8_ins_t {
   uint8_t  data;
 };
 
+typedef bool ( * aboloka_8_isa_stage_t ) (
+  struct aboloka_8_cpu_t * /* self */
+);
+
+struct aboloka_8_isa_t {
+  aboloka_8_isa_stage_t idle;
+  aboloka_8_isa_stage_t fetch;
+  aboloka_8_isa_stage_t decode;
+  aboloka_8_isa_stage_t execute;
+  aboloka_8_isa_stage_t access;
+};
+
 struct aboloka_8_cpu_t {
   struct aboloka_8_ram_t * ram;
   bool                     __owns_ram__;
@@ -110,6 +123,7 @@ struct aboloka_8_cpu_t {
   int                      stage;
   int                      target_stage;
   uint32_t                 cycles;
+  uint8_t                  unique_id;
   struct aboloka_8_ins_t   ins;
   struct aboloka_8_ir_t    ir;
   uint8_t                  ip;
@@ -122,6 +136,7 @@ struct aboloka_8_cpu_t {
   uint16_t                 mdt;
   uint8_t                  regs [ ABOLOKA_8_CPU_N_REGS ];
   uint8_t                  segs [ ABOLOKA_8_CPU_N_SEGS ];
+  struct aboloka_8_isa_t   isa;
 };
 
 __ABOLOKA_8_CORE_API__
@@ -182,6 +197,11 @@ bool aboloka_8_cpu_reset (
 
 __ABOLOKA_8_CORE_API__
 bool aboloka_8_cpu_cycle (
+  struct aboloka_8_cpu_t * self
+);
+
+__ABOLOKA_8_CORE_API__
+bool aboloka_8_cpu_is_halted (
   struct aboloka_8_cpu_t * self
 );
 

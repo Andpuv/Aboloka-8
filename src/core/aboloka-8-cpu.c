@@ -155,16 +155,17 @@ bool aboloka_8_cpu_halt (
   assert(self);
 
   if ( is_halt ) {
-    if ( self->quit || CPU_STAGE_IDLE == self->stage )
+    if ( self->quit || CPU_STAGE_HALT == self->stage )
       return false;
 
     self->target_stage = self->stage;
-    self->stage = CPU_STAGE_IDLE;
+    self->stage        = CPU_STAGE_HALT;
   } else {
-    if ( self->quit || CPU_STAGE_IDLE != self->stage )
+    if ( self->quit || CPU_STAGE_HALT != self->stage )
       return false;
 
-    self->stage = self->target_stage;
+    self->stage        = self->target_stage;
+    self->target_stage = CPU_STAGE_FETCH;
   }
 
   return true;
@@ -179,7 +180,7 @@ bool aboloka_8_cpu_reset (
 
   self->quit         = false;
   self->stage        = CPU_STAGE_IDLE;
-  self->target_stage = CPU_STAGE_IDLE;
+  self->target_stage = CPU_STAGE_FETCH;
   self->cycles       = UINT16_C(0);
   self->ip           = UINT8_C(0x00);
   self->csr          = CPU_LF;
@@ -224,10 +225,14 @@ bool aboloka_8_cpu_reset (
     self->ir.queue[ index ] = UINT8_C(0x00);
   }
 
+  self->isa.idle    = cpu_legacy_idle;
+  self->isa.fetch   = cpu_legacy_fetch;
+  self->isa.decode  = cpu_legacy_decode;
+  self->isa.execute = cpu_legacy_execute;
+  self->isa.access  = cpu_legacy_access;
+
   return true;
 }
-
-/* TODO(Andpuv) [2]: Implement legacy mode. */
 
 __ABOLOKA_8_CORE_API__
 bool aboloka_8_cpu_cycle (
@@ -246,43 +251,43 @@ bool aboloka_8_cpu_cycle (
     ++self->mcr;
   }
 
-  if ( CPU_STAGE_IDLE == self->stage ) {
-    int int_id = UINT8_C(0x1) << CPU_EXCEPTION_CAUSE_WU;
-
-    if ( !( self->irr[ CPU_IRQ_0 ] & int_id ) )
-      return true;
-
-    self->irr[ CPU_IRQ_0 ] &= ~int_id;
-    self->stage = self->target_stage;
-  }
-
   switch ( self->stage ) {
+  case CPU_STAGE_HALT:
+    break;
+
+  case CPU_STAGE_IDLE: {
+    if ( self->isa.idle(self) )
+      break;
+
+    self->stage = self->target_stage;
+  } break;
+
   case CPU_STAGE_FETCH: {
-    if ( !cpu_fetch(self) )
+    if ( !self->isa.fetch(self) )
       break;
 
     self->stage = CPU_STAGE_DECODE;
   } /* /fall-through/ */
   case CPU_STAGE_DECODE: {
-    if ( !cpu_decode(self) )
+    if ( !self->isa.decode(self) )
       break;
 
     self->stage = CPU_STAGE_ACCESS_0;
   } /* /fall-through/ */
   case CPU_STAGE_ACCESS_0: {
-    if ( !cpu_access(self) )
+    if ( !self->isa.access(self) )
       break;
 
     self->stage = CPU_STAGE_EXECUTE;
   } /* /fall-through/ */
   case CPU_STAGE_EXECUTE: {
-    if ( !cpu_execute(self) )
+    if ( !self->isa.execute(self) )
       break;
 
     self->stage = CPU_STAGE_ACCESS_1;
   } /* /fall-through/ */
   case CPU_STAGE_ACCESS_1: {
-    if ( !cpu_access(self) )
+    if ( !self->isa.access(self) )
       break;
 
     if ( self->ins.stage < self->ins.stages ) {
@@ -302,11 +307,18 @@ bool aboloka_8_cpu_cycle (
   } break;
   }
 
-  if ( self->csr & CPU_TF ) {
+  if ( CPU_TF == ( self->csr & ( CPU_TF | CPU_LF ) ) ) {
     cpu_exception(self, CPU_EXCEPTION_CAUSE_SS);
   }
 
   ++self->cycles;
-
   return true;
+}
+
+__ABOLOKA_8_CORE_API__
+bool aboloka_8_cpu_is_halted (
+  struct aboloka_8_cpu_t * self
+)
+{
+  return self->quit || ( CPU_STAGE_HALT == self->stage );
 }

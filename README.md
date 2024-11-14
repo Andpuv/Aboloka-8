@@ -350,27 +350,27 @@
 | 01100111 | SLL ACC, I           | Shift left accumulator logically by I.     |
 | iiiiiiii |                      |                                            |
 |----------|----------------------|--------------------------------------------|
-| 01100000 | SRA ACC, I           | Shift right accumulator arithmetically by  |
+| 01101000 | SRA ACC, I           | Shift right accumulator arithmetically by  |
 | iiiiiiii |                      | I.                                         |
 |----------|----------------------|--------------------------------------------|
-| 01100001 | XOR ACC, I           | Bitwise XOR between accumulator and I.     |
+| 01101001 | XOR ACC, I           | Bitwise XOR between accumulator and I.     |
 | iiiiiiii |                      |                                            |
 |----------|----------------------|--------------------------------------------|
-| 01100010 | CMP ACC, I           | Subtract I from accumulator without update |
+| 01101010 | CMP ACC, I           | Subtract I from accumulator without update |
 | iiiiiiii |                      | the accumulator.                           |
 |----------|----------------------|--------------------------------------------|
-| 01100011 | SBB ACC, I           | Bitwise AND between accumulator and I      |
+| 01101011 | SBB ACC, I           | Bitwise AND between accumulator and I      |
 | iiiiiiii |                      | without update the accumulator.            |
 |----------|----------------------|--------------------------------------------|
-| 01100100 | IN  ACC, I           | Move data from port I to accumulator.      |
+| 01101100 | IN  ACC, I           | Move data from port I to accumulator.      |
 | iiiiiiii |                      |                                            |
 |----------|----------------------|--------------------------------------------|
-| 01100101 | OUT ACC, I           | Move data from accumulator to port I.      |
+| 01101101 | OUT ACC, I           | Move data from accumulator to port I.      |
 | iiiiiiii |                      |                                            |
 |----------|----------------------|--------------------------------------------|
-| 01100110 | INT #UD              | Undefined instruction.                     |
+| 01101110 | LEGACY               | Go to the legacy ISA.                      |
 |----------|----------------------|--------------------------------------------|
-| 01100111 | INT #UD              | Undefined instruction.                     |
+| 01101111 | CPU_ID               | Move the CPU unique ID to accumulator.     |
 |==============================================================================|
 | Data Operations - Increment, and Decrement Register by 1                     |
 |==============================================================================|

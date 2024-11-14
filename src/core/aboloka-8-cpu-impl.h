@@ -112,6 +112,7 @@ bool cpu_write_mem (
   uint8_t                  data
 );
 
+#   define CPU_STAGE_HALT       -2
 #   define CPU_STAGE_IDLE       -1
 #   define CPU_STAGE_FETCH       0
 #   define CPU_STAGE_DECODE      1
@@ -130,6 +131,7 @@ bool cpu_write_mem (
 #   define CPU_ACCESS_INT_TABLE  6
 #   define CPU_ACCESS_MAP_TABLE  7
 
+bool cpu_idle    ( struct aboloka_8_cpu_t * self );
 bool cpu_fetch   ( struct aboloka_8_cpu_t * self );
 bool cpu_decode  ( struct aboloka_8_cpu_t * self );
 bool cpu_execute ( struct aboloka_8_cpu_t * self );

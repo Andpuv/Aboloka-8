@@ -21,6 +21,25 @@
 #   define CPU_LEGACY_LF ABOLOKA_8_CPU_LF
 #   define CPU_LEGACY_7F ABOLOKA_8_CPU_7F
 
+void cpu_legacy_update_flags (
+  struct aboloka_8_cpu_t * self,
+  bool                     ef,
+  bool                     cf,
+  bool                     of
+);
+
+uint8_t cpu_legacy_add_updating_flags (
+  struct aboloka_8_cpu_t * self,
+  uint8_t                  src_0,
+  uint8_t                  src_1
+);
+
+uint8_t cpu_legacy_sub_updating_flags (
+  struct aboloka_8_cpu_t * self,
+  uint8_t                  src_0,
+  uint8_t                  src_1
+);
+
 bool cpu_legacy_read_mem (
   struct aboloka_8_cpu_t * self,
   uint16_t                 addr,
@@ -33,6 +52,7 @@ bool cpu_legacy_write_mem (
   uint8_t                  data
 );
 
+bool cpu_legacy_idle    ( struct aboloka_8_cpu_t * self );
 bool cpu_legacy_fetch   ( struct aboloka_8_cpu_t * self );
 bool cpu_legacy_decode  ( struct aboloka_8_cpu_t * self );
 bool cpu_legacy_execute ( struct aboloka_8_cpu_t * self );

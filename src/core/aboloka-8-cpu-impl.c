@@ -1,5 +1,5 @@
 # include "aboloka-8-cpu-impl.h"
-#include <stdint.h>
+# include "aboloka-8-cpu-legacy.h"
 
 void cpu_update_flags (
   struct aboloka_8_cpu_t * self,
@@ -154,6 +154,19 @@ bool cpu_write_mem (
   return aboloka_8_ram_write(self->ram, addr, data);
 }
 
+bool cpu_idle ( struct aboloka_8_cpu_t * self )
+{
+  int int_id = UINT8_C(0x1) << CPU_EXCEPTION_CAUSE_WU;
+
+  if ( !( self->irr[ CPU_IRQ_0 ] & int_id ) )
+    return true;
+
+  self->irr[ CPU_IRQ_0 ] &= ~int_id;
+  self->stage = self->target_stage;
+
+  return false;
+}
+
 bool cpu_fetch ( struct aboloka_8_cpu_t * self )
 {
   return true;
@@ -161,6 +174,10 @@ bool cpu_fetch ( struct aboloka_8_cpu_t * self )
 
 bool cpu_decode ( struct aboloka_8_cpu_t * self )
 {
+  self->ins.stages = 0;
+  self->ins.stage  = 0;
+  self->ins.access = CPU_NO_ACCESS;
+
   return true;
 }
 
@@ -176,227 +193,21 @@ bool cpu_execute ( struct aboloka_8_cpu_t * self )
     self->stage = CPU_STAGE_IDLE;
   } break;
 
-  case 0x02:
-  case 0x04: case 0x05: case 0x06: case 0x07: {
-    switch ( self->ins.stage ) {
-    case 0: {
-      self->ins.stages = 2;
-      self->ins.stage  = 0;
-      self->ip         = self->ins.dst;
-      self->ins.access = CPU_ACCESS_SEG_READ;
-      self->ins.src_id = CPU_ES;
-    } break;
-
-    case 1: {
-      self->ins.access = CPU_ACCESS_SEG_WRITE;
-      self->ins.dst_id = CPU_CS;
-      self->ins.dst    = self->ins.src;
-    } break;
-    }
-
-    ++self->ins.stage;
+  case 0x6E: {
+    self->stage       = CPU_STAGE_FETCH;
+    self->isa.idle    = cpu_legacy_idle;
+    self->isa.fetch   = cpu_legacy_fetch;
+    self->isa.decode  = cpu_legacy_decode;
+    self->isa.execute = cpu_legacy_execute;
+    self->isa.access  = cpu_legacy_access;
   } break;
 
-  case 0x03:
-  case 0x08: case 0x09: case 0x0A: case 0x0B: {
-    switch ( self->ins.stage ) {
-    case 0: {
-      int16_t ip =
-        (int16_t)self->ip +
-        (int16_t)( (int8_t)self->ins.dst );
-
-      if ( ip < INT16_C(0) || CPU_SEG_SIZE <= ip ) {
-        self->ins.stages = 2;
-        self->ins.stage  = 0;
-        self->ins.ip     = ip % CPU_SEG_SIZE;
-        self->ins.dst    = ip / CPU_SEG_SIZE;
-        self->ins.access = CPU_ACCESS_SEG_READ;
-        self->ins.src_id = CPU_ES;
-      } else {
-        self->ins.stages = 1;
-        self->ins.stage  = 0;
-        self->ins.ip     = ip % CPU_SEG_SIZE;
-      }
-    } break;
-
-    case 1: {
-      self->ins.access = CPU_ACCESS_SEG_WRITE;
-      self->ins.dst_id = CPU_CS;
-      self->ins.dst   += self->ins.src;
-    } break;
-    }
-
-    ++self->ins.stage;
+  case 0x6F: {
+    self->ins.access = CPU_ACCESS_REG_WRITE;
+    self->ins.dst_id = CPU_AX;
+    self->ins.dst    = self->unique_id;
   } break;
 
-  case 0x0C: {
-
-  } break;
-
-  case 0x0D: {
-
-  } break;
-
-  case 0x0E: {
-
-  } break;
-
-  case 0x10: case 0x11: case 0x12: case 0x13: {
-    switch ( self->ins.stage ) {
-    case 0: {
-      self->ins.stages = 1;
-      self->ins.stage  = 0;
-      self->ins.access = CPU_ACCESS_REG_WRITE;
-      self->ins.dst    = self->ins.src;
-    } break;
-    }
-
-    ++self->ins.stage;
-  } break;
-
-  case 0x14: {
-
-  } break;
-
-  case 0x15: case 0x16: case 0x17: {
-    switch ( self->ins.stage ) {
-    case 0: {
-      self->ins.stages = 1;
-      self->ins.stage  = 0;
-      self->ins.access = CPU_ACCESS_REG_WRITE;
-      self->ins.dst_id = CPU_AX;
-      self->ins.dst    = self->ins.src;
-    } break;
-    }
-
-    ++self->ins.stage;
-  } break;
-
-  case 0x18: case 0x19: case 0x1A: case 0x1B: {
-    switch ( self->ins.stage ) {
-    case 0: {
-      self->ins.stages = 1;
-      self->ins.stage  = 0;
-      self->ins.access = CPU_ACCESS_REG_WRITE;
-      self->ins.dst    = self->ins.src;
-    } break;
-    }
-
-    ++self->ins.stage;
-  } break;
-
-  case 0x1C: {
-
-  } break;
-
-  case 0x1D: case 0x1E: case 0x1F: {
-    switch ( self->ins.stage ) {
-    case 0: {
-      self->ins.stages = 2;
-      self->ins.stage  = 0;
-      self->ins.access = CPU_ACCESS_REG_WRITE;
-      self->ins.dst    = self->ins.dst ^ self->ins.src;
-      self->ins.src    = self->ins.dst ^ self->ins.src;
-      self->ins.dst    = self->ins.dst ^ self->ins.src;
-    } break;
-
-    case 1: {
-      self->ins.access = CPU_ACCESS_REG_WRITE;
-      self->ins.dst_id = self->ins.src_id;
-      self->ins.dst    = self->ins.src;
-    } break;
-    }
-
-    ++self->ins.stage;
-  } break;
-
-  case 0x30: {
-    self->ins.stages = 0;
-    self->ins.stage  = 0;
-
-    if ( self->csr & CPU_UF ) {
-      cpu_exception(self, CPU_EXCEPTION_CAUSE_CP);
-    } else {
-      self->csr |= CPU_IF;
-    }
-  } break;
-
-  case 0x31: {
-    self->ins.stages = 0;
-    self->ins.stage  = 0;
-
-    if ( self->csr & CPU_UF ) {
-      cpu_exception(self, CPU_EXCEPTION_CAUSE_CP);
-    } else {
-      self->csr &= ~CPU_IF;
-    }
-  } break;
-
-  case 0x50: case 0x51: case 0x52: case 0x53: {
-    switch ( self->ins.stage ) {
-    case 0: {
-      self->ins.stages = 1;
-      self->ins.stage  = 0;
-      self->ins.access = CPU_ACCESS_REG_WRITE;
-      ++self->ins.dst;
-    } break;
-    }
-
-    ++self->ins.stage;
-  } break;
-
-  case 0x54: case 0x55: case 0x56: case 0x57: {
-    switch ( self->ins.stage ) {
-    case 0: {
-      self->ins.stages = 1;
-      self->ins.stage  = 0;
-      self->ins.access = CPU_ACCESS_REG_WRITE;
-      --self->ins.dst;
-    } break;
-    }
-
-    ++self->ins.stage;
-  } break;
-
-  case 0x60: case 0x61: case 0x62: case 0x63:
-  case 0x64: case 0x65: case 0x66: case 0x67:
-  case 0x68: case 0x69: case 0x6A: case 0x6B:
-  case 0x6C: case 0x6D: case 0x6E: case 0x6F: {
-    switch ( self->ins.stage ) {
-    case 0: {
-      self->ins.stages = 2;
-      self->ins.stage  = 0;
-      self->ins.access = CPU_ACCESS_REG_READ;
-      self->ins.src_id = CPU_AX;
-    } break;
-
-    case 1: {
-      self->ins.access = CPU_ACCESS_REG_WRITE;
-      self->ins.dst_id = CPU_AX;
-
-      if ( self->ins.opcode ) {
-        self->ins.src ^= self->ins.dst;
-      }
-
-      self->ins.dst = self->ins.src;
-
-      cpu_update_flags(self,
-        false,
-        is_zero(self->ins.dst),
-        is_sign(self->ins.dst),
-        false
-      );
-    } break;
-    }
-
-    ++self->ins.stage;
-  } break;
-
-  case 0x0F:
-  case 0x8C: case 0x8D: case 0x8E: case 0x8F:
-  case 0xAC:
-  case 0xBA: case 0xBB:
-    /* /fall-through/ */
   default: {
     cpu_exception(self, CPU_EXCEPTION_CAUSE_UD);
   } break;
@@ -425,14 +236,14 @@ bool cpu_access ( struct aboloka_8_cpu_t * self )
   } break;
 
   case CPU_ACCESS_MEM_WRITE:
-    return cpu_write(self,
+    return cpu_write_mem(self,
       self->ins.seg,
       self->ins.ofs,
       self->ins.dst
     );
 
   case CPU_ACCESS_MEM_READ:
-    return cpu_read(self,
+    return cpu_read_mem(self,
       self->ins.seg,
       self->ins.ofs,
       &self->ins.src
